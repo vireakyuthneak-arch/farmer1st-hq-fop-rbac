@@ -115,31 +115,39 @@ is precisely the desired state Abra converges the Mac to.
 Add a team to a role, or a role to a user, and the next `terraform apply` grants
 it; remove it and Terraform revokes it. Same GitOps model as the app side.
 
-### CI: merge-to-main is the onboarding button
+### CI: merge-to-main is the onboarding button (via HCP Terraform)
 
-[`.github/workflows/onboarding.yml`](.github/workflows/onboarding.yml) runs
-`make validate` + `terraform plan` on every PR that touches `fop/` or
-`terraform/`, and `terraform apply` on merge to `main`. The PR review is the
-approval gate; git history is the audit log.
+Two systems split the work:
+
+- **GitHub Actions** ([`validate` workflow](.github/workflows/onboarding.yml))
+  checks the RBEC (schemas + cross-references) on every PR and push.
+- **HCP Terraform** (app.terraform.io, VCS-driven workspace on this repo,
+  working directory `terraform/`) posts a speculative plan on every PR and
+  applies on merge to `main`. State lives in the workspace; every run is
+  logged and (with manual apply) explicitly confirmed.
+
+Workspace setup checklist:
+1. app.terraform.io -> create org -> New workspace -> Version control workflow
+   -> pick this repo.
+2. Settings: Terraform Working Directory = `terraform`; VCS triggers limited to
+   `terraform/` and `fop/`; apply method = Manual (recommended to start).
+3. Variables: `cloudflare_account_id` (Terraform variable) +
+   `CLOUDFLARE_API_TOKEN`, `GITHUB_TOKEN` (env vars, mark Sensitive). AWS:
+   dynamic provider credentials (`TFC_AWS_PROVIDER_AUTH=true`,
+   `TFC_AWS_RUN_ROLE_ARN=...`) when the AWS side goes live.
+4. Uncomment the `cloud {}` block in [`versions.tf`](terraform/versions.tf)
+   with the org/workspace names, commit, push.
 
 ### Master credentials (what Terraform itself authenticates with)
 
-Never stored in this repo. Local runs use env vars; CI uses Actions secrets +
-OIDC:
+Never stored in this repo. Local runs use `.env` / env vars; HCP Terraform uses
+workspace variables:
 
-| Provider | Local run | CI (GitHub Actions) | Scope to grant |
-|----------|-----------|---------------------|----------------|
-| AWS | your own `aws sso login` (admin profile) | **OIDC federation** — Actions assumes an IAM role (`AWS_TERRAFORM_ROLE_ARN` repo variable); **no static key exists** | `sso-admin` + `identitystore` write on the management account |
-| GitHub | `GITHUB_TOKEN` env var | `GH_ORG_TOKEN` secret | fine-grained org token (or GitHub App): org members + team members read/write |
-| Cloudflare | `CLOUDFLARE_API_TOKEN` env var | `CLOUDFLARE_API_TOKEN` secret | API token scoped to Access: apps/groups edit (never the Global API Key) |
-
-> ### Why no raw credentials in the spec
-> FOP declares **what access** a role should have, never secrets. Terraform
-> *realizes* that access: it assigns the user's SSO principal to a permission
-> set, and the user gets short-lived credentials via `aws sso login`. Real
-> account IDs and permission-set ARNs live in Terraform variables
-> ([`variables.tf`](terraform/variables.tf)), not in git as secrets. This keeps
-> the spec safe to be broadly readable and auditable via git history.
+| Provider | Local run | HCP Terraform workspace | Scope to grant |
+|----------|-----------|-------------------------|----------------|
+| AWS | your own `aws sso login` (admin profile) | dynamic provider credentials (OIDC role) — **no static key exists** | `sso-admin` + `identitystore` write on the management account |
+| GitHub | `GITHUB_TOKEN` env var | `GITHUB_TOKEN` env var (Sensitive) | fine-grained org token (or GitHub App): org members + team members read/write |
+| Cloudflare | `.env` via [`scripts/cf-onboard.sh`](scripts/cf-onboard.sh) | `CLOUDFLARE_API_TOKEN` env var (Sensitive) | API token: Members edit + Access groups edit + account read (never the Global API Key) |
 
 ## Adding things
 
