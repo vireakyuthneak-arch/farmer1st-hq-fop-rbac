@@ -1,0 +1,32 @@
+# UI/UX Designer — cask-first; iWork is the one App Store exception (no cask).
+schemaVersion: 1
+role: uiux-designer
+description: Product design, prototyping, and design systems.
+
+apps:
+  # office suite (default in every profile)
+  - keynote
+  - pages
+  - numbers
+  # design
+  - figma
+  - sketch
+  - zeplin
+  - imageoptim
+  # collaboration
+  - slack
+  - notion
+  - miro
+  # utilities
+  - chrome
+  - firefox
+  - rectangle
+
+cloud:
+  github:
+    org: farmer1st-hq
+    teams:
+      - design
+  cloudflare:
+    accessGroups:
+      - internal-dashboards

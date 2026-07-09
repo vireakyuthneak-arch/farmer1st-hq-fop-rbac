@@ -1,0 +1,30 @@
+# Project Manager
+schemaVersion: 1
+role: project-manager
+description: Planning, coordination, and delivery.
+
+apps:
+  # office suite (default in every profile)
+  - keynote
+  - pages
+  - numbers
+  # collaboration
+  - slack
+  - notion
+  - zoom
+  - teams
+  - linear
+  - miro
+  - granola
+  # utilities
+  - chrome
+  - rectangle
+
+cloud:
+  github:
+    org: farmer1st-hq
+    teams:
+      - product
+  cloudflare:
+    accessGroups:
+      - internal-dashboards

@@ -1,0 +1,13 @@
+# Cloudflare administrator — dashboard + internal apps, nothing else.
+# No apps, no AWS, no GitHub: safe to hold with a personal email.
+schemaVersion: 1
+role: cloudflare-admin
+description: Administers the Cloudflare account and reaches internal apps.
+
+apps: []
+
+cloud:
+  cloudflare:
+    accessGroups:
+      - internal-dashboards
+    dashboardRole: Administrator

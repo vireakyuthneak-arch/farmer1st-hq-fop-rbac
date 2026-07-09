@@ -1,0 +1,43 @@
+# DevOps Engineer — apps are catalog keys; `cloud` declares access (Terraform
+# realizes it — never credentials).
+schemaVersion: 1
+role: devops-engineer
+description: Infrastructure, CI/CD, and cloud operations.
+
+apps:
+  # office suite (default in every profile)
+  - keynote
+  - pages
+  - numbers
+  # everyday
+  - vscode
+  - slack
+  - granola
+  - grammarly
+  - rectangle
+  - trello
+  # dev + cloud
+  - git
+  - gh
+  - python
+  - docker
+  - docker-compose
+  - docker-desktop
+  - awscli
+  - terraform
+  - kubectl
+
+cloud:
+  aws:
+    account: farmer1st-dev
+    permissionSet: DevOpsEngineer
+  github:
+    org: farmer1st-hq
+    teams:
+      - devops
+      - infrastructure
+  cloudflare:
+    accessGroups:
+      - internal-dashboards
+      - infra-admin
+    dashboardRole: Administrator   # devops also administers Cloudflare itself

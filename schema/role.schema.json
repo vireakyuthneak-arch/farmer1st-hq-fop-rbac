@@ -1,0 +1,62 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://docs.farmer1st.tech/fop/schema/role.schema.json",
+  "title": "FOP role profile",
+  "type": "object",
+  "required": ["schemaVersion", "role", "apps"],
+  "additionalProperties": false,
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "role": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "description": { "type": "string" },
+    "apps": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+      "uniqueItems": true
+    },
+    "cloud": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "aws": {
+          "type": "object",
+          "required": ["account", "permissionSet"],
+          "additionalProperties": false,
+          "properties": {
+            "account": { "type": "string", "minLength": 1 },
+            "permissionSet": { "type": "string", "minLength": 1 }
+          }
+        },
+        "github": {
+          "type": "object",
+          "required": ["org", "teams"],
+          "additionalProperties": false,
+          "properties": {
+            "org": { "type": "string", "minLength": 1 },
+            "teams": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "uniqueItems": true
+            }
+          }
+        },
+        "cloudflare": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "accessGroups": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 },
+              "uniqueItems": true
+            },
+            "dashboardRole": {
+              "type": "string",
+              "minLength": 1,
+              "description": "Cloudflare account role name (e.g. Administrator) — grants dashboard membership via an invite email"
+            }
+          }
+        }
+      }
+    }
+  }
+}

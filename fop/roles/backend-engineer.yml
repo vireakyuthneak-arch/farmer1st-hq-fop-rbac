@@ -1,0 +1,39 @@
+# Backend Engineer
+schemaVersion: 1
+role: backend-engineer
+description: Application services, APIs, and the data layer.
+
+apps:
+  # office suite (default in every profile)
+  - keynote
+  - pages
+  - numbers
+  # everyday
+  - vscode
+  - slack
+  - granola
+  # dev
+  - git
+  - gh
+  - python
+  - node
+  - docker
+  - docker-compose
+  # data + API
+  - postgresql
+  - dbeaver
+  - tableplus
+  - postman
+  - insomnia
+
+cloud:
+  aws:
+    account: farmer1st-dev
+    permissionSet: BackendDeveloper
+  github:
+    org: farmer1st-hq
+    teams:
+      - backend
+  cloudflare:
+    accessGroups:
+      - internal-dashboards

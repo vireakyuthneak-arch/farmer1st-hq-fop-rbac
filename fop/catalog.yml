@@ -1,0 +1,285 @@
+# FOP app catalog — every installable app, defined once, referenced by key.
+#
+#   source: formula (Homebrew CLI) | cask (Homebrew GUI app) | mas (Mac App
+#           Store, numeric id) | direct (signed https pkg/dmg, needs sha256)
+#   version: latest (track upstream) | "pinned" (quoted, never force-upgraded)
+#
+# Policy: cask-first. `mas` only for Apple-exclusive apps — Abra never
+# auto-installs mas apps (no App Store sign-in / privilege prompts); it detects
+# them if present, otherwise reports them for App Store/MDM install.
+schemaVersion: 1
+
+apps:
+  # --- everyday apps ---
+  vscode:
+    name: Visual Studio Code
+    source: cask
+    id: visual-studio-code
+    version: latest
+    category: editor
+  slack:
+    name: Slack
+    source: cask
+    id: slack
+    version: latest
+    category: communication
+  granola:
+    name: Granola
+    source: cask
+    id: granola
+    version: latest
+    category: productivity
+  grammarly:
+    name: Grammarly Desktop
+    source: cask
+    id: grammarly-desktop
+    version: latest
+    category: productivity
+  rectangle:
+    name: Rectangle
+    source: cask
+    id: rectangle
+    version: latest
+    category: productivity
+
+  # --- dev CLI ---
+  git:
+    name: Git
+    source: formula
+    id: git
+    version: latest
+    category: dev
+  gh:
+    name: GitHub CLI
+    source: formula
+    id: gh
+    version: latest
+    category: dev
+
+  # --- languages (pinned tracks) ---
+  python:
+    name: Python 3.12
+    source: formula
+    id: python@3.12
+    version: "3.12"
+    category: language
+  node:
+    name: Node.js LTS
+    source: formula
+    id: node@20
+    version: "20"
+    category: language
+
+  # --- containers ---
+  docker:
+    name: Docker CLI
+    source: formula
+    id: docker
+    version: latest
+    category: containers
+  docker-compose:
+    name: Docker Compose
+    source: formula
+    id: docker-compose
+    version: latest
+    category: containers
+  docker-desktop:
+    name: Docker Desktop
+    source: cask
+    id: docker-desktop
+    version: latest
+    category: containers
+
+  # --- cloud / IaC ---
+  awscli:
+    name: AWS CLI v2
+    source: formula
+    id: awscli
+    version: latest
+    category: cloud
+  terraform:
+    name: Terraform
+    source: formula
+    id: hashicorp/tap/terraform   # lives in the hashicorp tap, not homebrew/core
+    version: latest
+    category: iac
+  kubectl:
+    name: kubectl
+    source: formula
+    id: kubernetes-cli
+    version: latest
+    category: cloud
+
+  # --- databases / API tooling ---
+  postgresql:
+    name: PostgreSQL 16
+    source: formula
+    id: postgresql@16
+    version: "16"
+    category: database
+  tableplus:
+    name: TablePlus
+    source: cask
+    id: tableplus
+    version: latest
+    category: database
+  dbeaver:
+    name: DBeaver Community
+    source: cask
+    id: dbeaver-community
+    version: latest
+    category: database
+  postman:
+    name: Postman
+    source: cask
+    id: postman
+    version: latest
+    category: api
+  insomnia:
+    name: Insomnia
+    source: cask
+    id: insomnia
+    version: latest
+    category: api
+
+  # --- design ---
+  figma:
+    name: Figma
+    source: cask
+    id: figma
+    version: latest
+    category: design
+  sketch:
+    name: Sketch
+    source: cask
+    id: sketch
+    version: latest
+    category: design
+  zeplin:
+    name: Zeplin
+    source: cask
+    id: zeplin
+    version: latest
+    category: design
+  imageoptim:
+    name: ImageOptim
+    source: cask
+    id: imageoptim
+    version: latest
+    category: design
+  canva:
+    name: Canva
+    source: cask
+    id: canva
+    version: latest
+    category: design
+
+  # --- collaboration ---
+  notion:
+    name: Notion
+    source: cask
+    id: notion
+    version: latest
+    category: collaboration
+  miro:
+    name: Miro
+    source: cask
+    id: miro
+    version: latest
+    category: collaboration
+  zoom:
+    name: Zoom
+    source: cask
+    id: zoom
+    version: latest
+    category: communication
+  teams:
+    name: Microsoft Teams
+    source: cask
+    id: microsoft-teams
+    version: latest
+    category: communication
+  linear:
+    name: Linear
+    source: cask
+    id: linear-linear
+    version: latest
+    category: project
+  telegram:
+    name: Telegram
+    source: cask
+    id: telegram
+    version: latest
+    category: communication
+  wechat:
+    name: WeChat
+    source: cask
+    id: wechat
+    version: latest
+    category: communication
+
+  # --- browsers ---
+  chrome:
+    name: Google Chrome
+    source: cask
+    id: google-chrome
+    version: latest
+    category: browser
+  firefox:
+    name: Firefox
+    source: cask
+    id: firefox
+    version: latest
+    category: browser
+
+  # --- media ---
+  elmedia:
+    name: Elmedia Video Player
+    source: cask
+    id: elmedia-player
+    version: latest
+    category: media
+  capcut:
+    name: CapCut
+    source: cask
+    id: capcut
+    version: latest
+    category: media
+
+  # --- Apple-exclusive (App Store only; no cask exists — detect/report only) ---
+  keynote:
+    name: Keynote
+    source: mas
+    id: "361285480"
+    version: latest
+    category: office
+  pages:
+    name: Pages
+    source: mas
+    id: "361309726"
+    version: latest
+    category: office
+  numbers:
+    name: Numbers
+    source: mas
+    id: "361304891"
+    version: latest
+    category: office
+  xcode:
+    name: Xcode
+    source: mas
+    id: "497799835"
+    version: latest
+    category: dev
+  testflight:
+    name: TestFlight
+    source: mas
+    id: "899247664"
+    version: latest
+    category: dev
+  trello:
+    name: Trello
+    source: mas
+    id: "1278508951"
+    version: latest
+    category: productivity

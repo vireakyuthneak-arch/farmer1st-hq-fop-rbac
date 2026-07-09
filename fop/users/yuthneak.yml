@@ -1,0 +1,10 @@
+# Yuth Neak — Cloudflare admin via personal Gmail (no Mac enrolled).
+schemaVersion: 1
+user: yuthneak
+identity:
+  email: nvireakyuth@gmail.com
+  fullName: Yuth Neak
+  github: yuthneak   # placeholder — role grants no GitHub access, never used
+
+roles:
+  - cloudflare-admin
