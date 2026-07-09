@@ -8,11 +8,12 @@
 name: validate
 
 on:
+  workflow_dispatch: {} # run it manually from the Actions tab anytime
   pull_request:
-    paths: ["fop/**", "schema/**", "terraform/**", "scripts/**"]
+    paths: ["fop/**", "schema/**", "terraform/**", "scripts/**", ".github/workflows/**"]
   push:
     branches: [main]
-    paths: ["fop/**", "schema/**", "terraform/**", "scripts/**"]
+    paths: ["fop/**", "schema/**", "terraform/**", "scripts/**", ".github/workflows/**"]
 
 permissions:
   contents: read
