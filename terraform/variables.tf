@@ -15,6 +15,21 @@ variable "cloudflare_account_id" {
   default     = "REPLACE-with-cloudflare-account-id"
 }
 
+# Provider gates: Cloudflare goes live first. Flip these to true (as HCP
+# workspace variables) once each provider's credentials + real values exist —
+# until then, plans skip those resources entirely instead of failing.
+variable "enable_aws" {
+  type        = bool
+  description = "Provision AWS Identity Center users + assignments."
+  default     = false
+}
+
+variable "enable_github" {
+  type        = bool
+  description = "Provision GitHub org invites + team memberships."
+  default     = false
+}
+
 variable "account_ids" {
   type        = map(string)
   description = <<-EOT
