@@ -15,6 +15,16 @@ variable "cloudflare_account_id" {
   default     = "REPLACE-with-cloudflare-account-id"
 }
 
+# Named to match the HCP workspace Terraform variable. When null (e.g. local
+# runs via cf-onboard.sh), the provider falls back to the CLOUDFLARE_API_TOKEN
+# environment variable — both storage styles work.
+variable "CLOUDFLARE_API_TOKEN" {
+  type        = string
+  description = "Cloudflare API token (Members Edit + Access Edit + Account Read)."
+  sensitive   = true
+  default     = null
+}
+
 # Provider gates: Cloudflare goes live first. Flip these to true (as HCP
 # workspace variables) once each provider's credentials + real values exist —
 # until then, plans skip those resources entirely instead of failing.

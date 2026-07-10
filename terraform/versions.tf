@@ -44,5 +44,7 @@ provider "github" {
 }
 
 provider "cloudflare" {
-  # auth: CLOUDFLARE_API_TOKEN env var (scoped token, never the Global API Key)
+  # auth: the CLOUDFLARE_API_TOKEN workspace Terraform variable; when unset
+  # (local runs), falls back to the CLOUDFLARE_API_TOKEN environment variable.
+  api_token = var.CLOUDFLARE_API_TOKEN
 }
