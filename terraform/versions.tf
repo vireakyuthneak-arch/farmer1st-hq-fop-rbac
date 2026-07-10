@@ -24,8 +24,18 @@ terraform {
   }
 }
 
+# The AWS provider initializes even when every AWS resource is gated off, and
+# errors if it can't find credentials. While enable_aws=false we feed it inert
+# placeholder credentials and skip all validation — zero AWS API calls happen
+# because no AWS resources/data sources exist. Flipping enable_aws=true makes
+# everything null/false again, restoring the normal credential chain.
 provider "aws" {
-  region = var.aws_region
+  region                      = var.aws_region
+  access_key                  = var.enable_aws ? null : "gated-off"
+  secret_key                  = var.enable_aws ? null : "gated-off"
+  skip_credentials_validation = !var.enable_aws
+  skip_requesting_account_id  = !var.enable_aws
+  skip_metadata_api_check     = !var.enable_aws
 }
 
 provider "github" {
