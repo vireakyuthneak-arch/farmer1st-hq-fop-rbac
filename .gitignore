@@ -2,6 +2,7 @@
 .DS_Store
 .abra-sim/
 .env
+README.local.md
 terraform/.terraform/
 terraform/.terraform.lock.hcl
 terraform/*.tfstate
