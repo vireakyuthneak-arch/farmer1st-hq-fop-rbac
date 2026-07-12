@@ -29,8 +29,11 @@ apps:
 
 cloud:
   aws:
-    account: farmer1st-dev
-    permissionSet: DevOpsEngineer
+    grants:
+      - account: farmer1st-dev
+        permissionSet: DevOpsEngineer
+      - account: farmer1st-prod
+        permissionSet: Developer
   github:
     org: farmer1st-hq
     teams:

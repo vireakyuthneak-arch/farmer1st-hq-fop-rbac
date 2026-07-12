@@ -43,23 +43,13 @@ variable "enable_github" {
 variable "account_ids" {
   type        = map(string)
   description = <<-EOT
-    Maps the logical account names used in FOP roles (cloud.aws.account) to real
-    12-digit AWS account IDs. Keeps account numbers out of the FOP spec.
+    Maps the logical account names used in FOP roles (cloud.aws.grants[].account)
+    to real 12-digit AWS account IDs. Keeps account numbers out of the FOP spec.
+    Permission sets are NOT mapped here — they are defined as code in
+    aws-foundation.tf and referenced by name from the roles.
   EOT
   default = {
-    farmer1st-dev  = "111111111111"
-    farmer1st-prod = "222222222222"
-  }
-}
-
-variable "permission_set_arns" {
-  type        = map(string)
-  description = <<-EOT
-    Maps the permission-set names used in FOP roles (cloud.aws.permissionSet) to
-    their IAM Identity Center permission-set ARNs. Look these up once per org.
-  EOT
-  default = {
-    DevOpsEngineer   = "arn:aws:sso:::permissionSet/ssoins-REPLACE/ps-REPLACE-devops"
-    BackendDeveloper = "arn:aws:sso:::permissionSet/ssoins-REPLACE/ps-REPLACE-backend"
+    farmer1st-dev  = "111111111111" # REPLACE with the real dev account id
+    farmer1st-prod = "222222222222" # REPLACE with the real prod account id
   }
 }

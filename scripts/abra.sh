@@ -18,7 +18,7 @@
 #   bash scripts/abra.sh                 # auto-detect this Mac -> its user -> role apps
 #   bash scripts/abra.sh --dry-run       # show what it WOULD do
 #   bash scripts/abra.sh --serial XXXX   # pretend to be another Mac (testing)
-#   bash scripts/abra.sh --user sokha    # force a user (testing)
+#   bash scripts/abra.sh --user test-user   # force a user (testing)
 #   bash scripts/abra.sh --role backend-developer   # force a role, skip lookup
 #
 # Casks install into ~/Applications so no admin password is needed. mas apps

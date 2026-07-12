@@ -18,12 +18,12 @@ One spec, two consumers. This repo owns the **spec and the Terraform** — not A
 | Path | What |
 |------|------|
 | `fop/catalog.yml` | Every app defined once, keyed. `source` ∈ `formula`/`cask` (Homebrew), `mas` (Mac App Store), `direct` (signed https download, needs `sha256`). |
-| `fop/roles/*.yml` | One per role: `apps` (catalog keys) + `cloud` access (aws account/permissionSet, github org/teams). |
+| `fop/roles/*.yml` | One per role: `apps` (catalog keys) + `cloud` access (aws `grants[]` of account × permissionSet, github org/teams, cloudflare accessGroups/dashboardRole). |
 | `fop/users/*.yml` | One per person: `identity` + `devices` + `roles` + `overrides` (add/remove apps). |
 | `schema/*.schema.json` | JSON Schema contract Abra + CI validate against. |
 | `docs/ABRA-CONTRACT.md` | The full Abra ↔ RBEC interface spec (what Abra reads and how it must converge). |
 | `scripts/validate.py` | `validate` (schema + cross-refs) and `resolve <user>` (prints the exact app set Abra installs). |
-| `terraform/` | Reads `fop/` via `yamldecode`; `github.tf` (org+team membership), `aws.tf` (IAM Identity Center SSO assignment), `variables.tf` (account IDs + permission-set ARNs). |
+| `terraform/` | Reads `fop/` via `yamldecode`. Two AWS layers: `aws-foundation.tf` (the permission-set **catalog as code**: ReadOnly/Developer/DevOpsEngineer/BreakGlassAdmin) + `aws.tf` (Identity Center users + assignments). Also `github.tf` (org+team membership), `cloudflare.tf` (Access groups + dashboard members), `variables.tf` (account IDs, `enable_aws`/`enable_github` gates). |
 
 ## Commands
 
@@ -50,9 +50,11 @@ make tf-plan                   # show GitHub/AWS access the spec resolves to (no
 
 - **No secrets in the spec.** FOP declares *what access* a role gets; Terraform
   *realizes* it via AWS SSO, and users get short-lived creds through
-  `aws sso login`. Real account IDs / permission-set ARNs live in
-  `terraform/variables.tf`, never as secrets in git. Keep it that way — the spec
-  is meant to be broadly readable and auditable via git history.
+  `aws sso login`. Real account IDs live in `terraform/variables.tf`
+  (`var.account_ids`); permission sets are **defined as code** in
+  `terraform/aws-foundation.tf` and referenced by name from roles — never
+  secrets in git. Keep it that way — the spec is meant to be broadly readable
+  and auditable via git history.
 - **Do not build Abra here.** It is a separate project. This repo stops at the
   spec + Terraform. (An earlier throwaway Go prototype of Abra was intentionally
   deleted — do not resurrect it.)
@@ -62,5 +64,10 @@ make tf-plan                   # show GitHub/AWS access the spec resolves to (no
 
 - Spec named **RBEC** (Role-Based Entitlement Contract); "ABEC" was a
   typo of the same thing. The `fop/` directory can be renamed `dbec/` if wanted.
-- Terraform currently *assumes* the GitHub teams and SSO permission sets already
-  exist; creating them from the spec is a possible next step.
+- Terraform currently *assumes* the GitHub teams already exist (`github.tf`
+  data-looks them up); creating them from the spec is a possible next step.
+  SSO permission sets are NOT assumed — they are created by
+  `terraform/aws-foundation.tf`; do not pre-create sets with the same names in
+  the console (name collision on apply).
+- AWS and GitHub are gated (`enable_aws` / `enable_github`, default false)
+  until their credentials + real account values exist; Cloudflare is live first.

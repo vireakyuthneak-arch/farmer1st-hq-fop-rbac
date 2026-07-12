@@ -59,9 +59,18 @@ Store), or `direct` (a signed `.pkg`/`.dmg` over https, with a required `sha256`
 role: devops-engineer
 apps: [vscode, slack, granola, docker, docker-compose, docker-desktop, python, awscli, terraform, kubectl]
 cloud:
-  aws:    { account: farmer1st-dev, permissionSet: DevOpsEngineer }
+  aws:
+    grants: # account x permission set, any number of pairs
+      - { account: farmer1st-dev, permissionSet: DevOpsEngineer }
+      - { account: farmer1st-prod, permissionSet: Developer }
   github: { org: farmer1st-hq, teams: [devops, infrastructure] }
+  cloudflare: { accessGroups: [internal-dashboards, infra-admin] }
 ```
+
+Permission-set names come from the small catalog defined as code in
+[`terraform/aws-foundation.tf`](terraform/aws-foundation.tf) (ReadOnly ·
+Developer · DevOpsEngineer · BreakGlassAdmin); logical account names resolve to
+real ids via `var.account_ids`.
 
 ### How a person is assigned
 

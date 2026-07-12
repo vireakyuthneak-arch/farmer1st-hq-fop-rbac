@@ -26,28 +26,32 @@ locals {
     }
   ]...)
 
-  # (user, role) AWS assignments — each maps to an account + permission set.
+  # (user x account x permission-set) AWS assignments — the union of every
+  # cloud.aws.grants entry across a user's roles, deduplicated (two roles
+  # granting the same set on the same account collapse into one assignment).
   aws_assignments = merge([
     for uname, u in local.users : {
-      for r in u.roles :
-      "${uname}:${r}" => {
+      for g in distinct(flatten([
+        for r in u.roles : try(local.roles[r].cloud.aws.grants, [])
+      ])) :
+      "${uname}:${g.account}:${g.permissionSet}" => {
         # SSO username defaults to the work email; set identity.awsUserName
         # in a user file only when they differ.
         aws_user       = try(u.identity.awsUserName, u.identity.email)
-        account        = local.roles[r].cloud.aws.account
-        permission_set = local.roles[r].cloud.aws.permissionSet
-      } if try(local.roles[r].cloud.aws, null) != null
+        account        = g.account
+        permission_set = g.permissionSet
+      }
     }
   ]...)
 
-  # Identity Center users to CREATE: one per user that holds >=1 AWS-bearing
-  # role. Keyed by SSO username (email unless identity.awsUserName overrides).
+  # Identity Center users to CREATE: one per user that holds >=1 AWS grant.
+  # Keyed by SSO username (email unless identity.awsUserName overrides).
   aws_identities = {
     for uname, u in local.users :
     try(u.identity.awsUserName, u.identity.email) => {
       email     = u.identity.email
       full_name = try(u.identity.fullName, u.identity.email)
-    } if length([for r in u.roles : r if try(local.roles[r].cloud.aws, null) != null]) > 0
+    } if length(flatten([for r in u.roles : try(local.roles[r].cloud.aws.grants, [])])) > 0
   }
 
   github_teams = toset([for m in local.github_memberships : m.team])

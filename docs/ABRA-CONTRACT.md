@@ -156,9 +156,12 @@ converge — keep using the last good copy).
 make setup && make validate                    # spec is coherent
 make resolve USER=vireakyuth                   # expected app set (the oracle)
 bash scripts/abra.sh --dry-run                 # reference resolution on this Mac
-bash scripts/abra.sh --user maly --dry-run     # multi-role union
+bash scripts/abra.sh --user test-user --dry-run   # forced-user resolution
 bash scripts/abra.sh --serial NOPE --dry-run   # unassigned device → clean no-op
 ```
+
+(For the multi-role union case, give any user a second role in their `roles:`
+list and re-run `resolve` — the union must be deduplicated.)
 
 An Abra build is correct when, for any user, its computed install plan matches
 `resolve`'s output, and running it twice in a row produces zero actions the

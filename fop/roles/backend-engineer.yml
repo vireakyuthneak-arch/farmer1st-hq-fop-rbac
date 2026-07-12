@@ -28,8 +28,11 @@ apps:
 
 cloud:
   aws:
-    account: farmer1st-dev
-    permissionSet: BackendDeveloper
+    grants:
+      - account: farmer1st-dev
+        permissionSet: Developer
+      - account: farmer1st-prod
+        permissionSet: ReadOnly
   github:
     org: farmer1st-hq
     teams:
