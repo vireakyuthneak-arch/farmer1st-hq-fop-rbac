@@ -129,7 +129,9 @@ def validate() -> int:
         )
         if needs_github and not gh:
             warnings.append(f"  users/{name}.yml: roles grant GitHub teams but "
-                            f"identity.github is not set yet (required before enable_github)")
+                            f"identity.github is not set yet — the daemon keys users by GitHub "
+                            f"login, so this Mac cannot be served until the real login lands "
+                            f"(also required before enable_github)")
 
     if errors:
         print("FOP spec INVALID:\n" + "\n".join(errors))

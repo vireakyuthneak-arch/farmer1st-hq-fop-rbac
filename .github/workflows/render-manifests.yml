@@ -41,8 +41,26 @@ jobs:
       - name: Golden hash + determinism tests
         run: python3 render/test_render.py
 
+      - name: Fetch previous index (manifest version carry-forward)
+        env:
+          TOKEN: ${{ secrets.APPSTORE_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::notice::no token — first-publish semantics (all versions start at 1)"
+            exit 0
+          fi
+          if curl -sf -H "Authorization: Bearer $TOKEN" \
+               -H "Accept: application/vnd.github.raw+json" \
+               "https://api.github.com/repos/farmer1st-common/fop-appstore/contents/manifests/index.json?ref=main" \
+               -o prev-index.json; then
+            echo "RENDER_PREV=--prev-index prev-index.json" >> "$GITHUB_ENV"
+            echo "previous index fetched — versions will carry forward"
+          else
+            echo "::notice::no previous index in appstore yet (first publish)"
+          fi
+
       - name: Render manifests
-        run: python3 render/render.py --out build
+        run: python3 render/render.py --out build ${RENDER_PREV:-}
 
       - name: Upload rendered manifests (inspection artifact)
         uses: actions/upload-artifact@v4
