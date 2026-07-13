@@ -2,7 +2,7 @@
 VENV := .venv
 PY   := $(VENV)/bin/python
 
-.PHONY: setup validate resolve tf-fmt tf-validate tf-plan clean
+.PHONY: setup validate resolve render sim tf-fmt tf-validate tf-plan clean
 
 setup:
 	python3 -m venv $(VENV)
@@ -21,6 +21,11 @@ resolve:
 #   make sim SERIAL=FCQN7GT76Y   resolve by device serial (as MDM would)
 sim:
 	$(PY) scripts/abra_sim.py $(if $(SERIAL),--serial $(SERIAL),--user $(USER))
+
+# Render the daemon manifests locally (build/manifests/) + run golden tests.
+render:
+	$(PY) render/test_render.py
+	$(PY) render/render.py --out build
 
 tf-fmt:
 	cd terraform && terraform fmt -recursive

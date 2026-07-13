@@ -2,7 +2,7 @@
 # LAYER 1 — AWS foundation: the permission-set catalog.
 #
 # WHAT a role name is allowed to do lives here, as code. WHO holds it, on
-# WHICH account, lives in the RBEC (fop/roles/*.yml -> cloud.aws.grants) and
+# WHICH account, lives in the Profiles (profiles/roles/*.yml -> cloud.aws.grants) and
 # is realized by aws.tf (Layer 2). The two layers change at different speeds:
 # this file changes rarely and deserves hard review; people changes flow
 # through RBEC PRs without ever touching policy definitions.

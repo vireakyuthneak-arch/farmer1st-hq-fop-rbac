@@ -1,0 +1,17 @@
+# Device map: Mac hardware serial -> user key (one line per enrolled Mac).
+# Rendered verbatim into manifests/index.json — the daemon resolves a machine
+# by LOOKUP here, never by scanning user files. Keys are provisional handles
+# until each person's real GitHub login is confirmed (then rename both here
+# and the user file — validate.py keeps them consistent).
+schemaVersion: 1
+devices:
+  J4WDFJXY4C: samann-long
+  DVT2276RKX: damon-hase
+  L33YL62QMY: angelique-delamere
+  H9705DT90T: nicolas-delrieu
+  L2CLFWV6PK: sienghor-chen
+  FCQN7GT76Y: vireakyuth
+  MFQD6X2RPF: oddommony-ly
+  DRYPWRW05V: kana-ty
+  JVCWDLX2FX: voathnak-lim
+  FVFJ95WHQ6L4: laurent-lafon-barret

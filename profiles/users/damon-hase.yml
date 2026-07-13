@@ -1,0 +1,8 @@
+# Damon Hase — handle is provisional until their real GitHub login is confirmed
+schemaVersion: 1
+user: damon-hase
+identity:
+  email: damon.hase@farmer1st.org
+  fullName: Damon Hase
+roles:
+  - project-manager

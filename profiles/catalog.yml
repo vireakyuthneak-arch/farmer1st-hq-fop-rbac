@@ -1,12 +1,11 @@
 # FOP app catalog — every installable app, defined once, referenced by key.
 #
-#   source: formula (Homebrew CLI) | cask (Homebrew GUI app) | mas (Mac App
-#           Store, numeric id) | direct (signed https pkg/dmg, needs sha256)
+#   source: formula (Homebrew CLI) | cask (Homebrew GUI app)
 #   version: latest (track upstream) | "pinned" (quoted, never force-upgraded)
 #
-# Policy: cask-first. `mas` only for Apple-exclusive apps — Abra never
-# auto-installs mas apps (no App Store sign-in / privilege prompts); it detects
-# them if present, otherwise reports them for App Store/MDM install.
+# Policy (ADR-0020): Homebrew formulae + public casks ONLY. App Store apps
+# (iWork, Xcode, TestFlight, Trello) and direct downloads are out of FOP
+# scope — deliver those via MDM/VPP.
 schemaVersion: 1
 
 apps:
@@ -246,40 +245,3 @@ apps:
     version: latest
     category: media
 
-  # --- Apple-exclusive (App Store only; no cask exists — detect/report only) ---
-  keynote:
-    name: Keynote
-    source: mas
-    id: "361285480"
-    version: latest
-    category: office
-  pages:
-    name: Pages
-    source: mas
-    id: "361309726"
-    version: latest
-    category: office
-  numbers:
-    name: Numbers
-    source: mas
-    id: "361304891"
-    version: latest
-    category: office
-  xcode:
-    name: Xcode
-    source: mas
-    id: "497799835"
-    version: latest
-    category: dev
-  testflight:
-    name: TestFlight
-    source: mas
-    id: "899247664"
-    version: latest
-    category: dev
-  trello:
-    name: Trello
-    source: mas
-    id: "1278508951"
-    version: latest
-    category: productivity

@@ -4,10 +4,6 @@ role: backend-engineer
 description: Application services, APIs, and the data layer.
 
 apps:
-  # office suite (default in every profile)
-  - keynote
-  - pages
-  - numbers
   # everyday
   - vscode
   - slack

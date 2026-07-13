@@ -5,27 +5,25 @@ role: devops-engineer
 description: Infrastructure, CI/CD, and cloud operations.
 
 apps:
-  # office suite (default in every profile)
-  - keynote
-  - pages
-  - numbers
   # everyday
   - vscode
   - slack
   - granola
   - grammarly
   - rectangle
-  - trello
   # dev + cloud
   - git
   - gh
   - python
   - docker
   - docker-compose
-  - docker-desktop
   - awscli
   - terraform
   - kubectl
+
+# trust-plane installs (admin-requiring; daemon root plane handles these)
+system:
+  - docker-desktop
 
 cloud:
   aws:

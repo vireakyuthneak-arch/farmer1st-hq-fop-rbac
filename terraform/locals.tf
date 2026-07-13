@@ -5,7 +5,7 @@
 #   - an unknown role name in a user file is a HARD plan error (local.user_roles
 #     indexes local.roles directly — no try() around the role lookup), never a
 #     silent resolve-to-nothing that would plan mass revocation;
-#   - an empty/missing fop/users or fop/roles directory aborts the plan via
+#   - an empty/missing profiles/users or profiles/roles directory aborts the plan via
 #     local.spec_guard instead of planning destruction of all managed access.
 #
 # Stable resource keys: derived maps are keyed by identity (github handle,
@@ -13,8 +13,8 @@
 # destroy/recreate someone's org membership or account assignments.
 # (scripts/validate.py additionally enforces filename == user:/role: field.)
 locals {
-  roles_dir = "${path.module}/../fop/roles"
-  users_dir = "${path.module}/../fop/users"
+  roles_dir = "${path.module}/../profiles/roles"
+  users_dir = "${path.module}/../profiles/users"
 
   roles = {
     for f in fileset(local.roles_dir, "*.yml") :
@@ -28,7 +28,7 @@ locals {
   # Guard: a broken checkout / renamed directory yields empty filesets, which
   # would otherwise plan a clean-looking destruction of everything managed.
   spec_guard = (length(local.roles) > 0 && length(local.users) > 0) ? true : tobool(
-    "RBEC spec error: fop/roles or fop/users resolved to zero files — refusing to plan (this would revoke all managed access). Check the repo layout / working directory."
+    "RBEC spec error: profiles/roles or profiles/users resolved to zero files — refusing to plan (this would revoke all managed access). Check the repo layout / working directory."
   )
 
   # Resolve every user's role list ONCE, with a direct index: an unknown role
@@ -43,7 +43,10 @@ locals {
   # (github handle, team) memberships — union of teams across a user's roles.
   # Keyed by the handle, so file renames don't churn resources. Users whose
   # roles grant no teams never need a github handle at all.
-  github_memberships = merge([
+  # Gated: while enable_github=false this stays empty so users whose logins
+  # aren't collected yet don't fail the plan; flipping the gate with a missing
+  # identity.github is a HARD error (fail-closed at grant time).
+  github_memberships = !var.enable_github ? {} : merge([
     for uname, u in local.users : {
       for team in distinct(flatten([
         for role in local.user_roles[uname] : try(role.cloud.github.teams, [])

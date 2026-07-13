@@ -1,57 +1,52 @@
 # FOP — Farmer1st Operating Platform (spec + onboarding IaC)
 
 FOP is the **single source of truth** for what each employee's Mac and cloud
-access should be. The spec itself is called the **RBEC — Device Baseline &
-Entitlement Contract**: the YAML that declares each role's baseline apps and its
-entitlements. It is plain YAML in git. Two consumers read the RBEC:
+access should be. The config here is the **Profiles** tree (spec term;
+formerly nicknamed "RBEC"): plain YAML declaring the app catalog, role
+profiles, users, and the device map. Two consumers:
 
-1. **Abra** (the background binary on each Mac — built separately) reads the spec,
-   figures out which apps the logged-in user's role needs, and installs/updates/
-   removes them on a system heartbeat.
-2. **Terraform** (here) reads the *same* spec during onboarding and provisions the
-   user's GitHub and AWS access.
-
-One spec, two consumers. Change a role once and both the Mac fleet and cloud
-access follow.
+1. **The FOP daemon (Abra)** on each Mac — it never reads this repo. CI
+   **renders** the Profiles into hashed **Rendered Manifests**, publishes them
+   to `fop-appstore` (via `repository_dispatch` — this repo holds no appstore
+   credential), and the daemon fast-polls the appstore (ETag) and applies.
+2. **Terraform** (here) reads the same Profiles during onboarding and
+   provisions the user's AWS / GitHub / Cloudflare access.
 
 ```
-                    ┌───────────────────────────┐
-                    │  FOP spec (this repo, YAML) │
-                    │  catalog · roles · users    │
-                    └───────────┬─────────┬───────┘
-                       reads     │         │   reads
-                 ┌───────────────┘         └───────────────┐
-                 ▼                                          ▼
-        Abra (on each Mac)                        Terraform (onboarding)
-   resolve user → app set →                 roles → GitHub teams + AWS SSO
-   brew install / update / reap                 permission-set assignments
+ profiles/ (this repo)                     Terraform (this repo)
+     │  render/render.py                        roles → AWS SSO grants +
+     ▼                                          GitHub teams + Cloudflare groups
+ manifests/*.json ──dispatch──▶ fop-appstore
+                                     ▲
+                     ETag fast-poll  │
+                            fop daemon (each Mac): brew bundle · reap
 ```
 
-> **Building or integrating Abra?** The complete Abra ↔ RBEC interface — what
-> Abra must read, how to resolve a device to an app set, install semantics per
-> source, convergence rules — is specified in
+> **Integrating with the daemon?** The manifest schema, the byte-exact
+> `payload_sha256` recipe, and the golden fixture are in
 > [`docs/ABRA-CONTRACT.md`](docs/ABRA-CONTRACT.md).
 
-## The spec (RBEC)
+## The spec (Profiles)
 
 | File | What it is |
 |------|-----------|
-| [`fop/catalog.yml`](fop/catalog.yml) | Every installable app, defined once, keyed. Says **how** to fetch each (Homebrew formula/cask, Mac App Store, or a signed direct download). |
-| [`fop/roles/*.yml`](fop/roles) | One file per role (e.g. `devops-engineer`). Lists apps by catalog key + the cloud/GitHub **access** the role grants. |
-| [`fop/users/*.yml`](fop/users) | One file per person. Binds identity (email, GitHub, AWS username) + device serials + assigned role(s) + per-user app overrides. |
-| [`schema/*.schema.json`](schema) | JSON Schemas — the formal contract Abra and CI validate against. |
+| [`profiles/catalog.yml`](profiles/catalog.yml) | Every installable app, defined once, keyed. Homebrew **formulae + public casks only** (ADR-0020) — App Store / direct-download apps are out of FOP scope (MDM/VPP). |
+| [`profiles/roles/*.yml`](profiles/roles) | One file per role. Apps by catalog key + `system[]` (trust-plane installs) + `whitelist[]` (tolerated self-installs) + the cloud **access** the role grants. |
+| [`profiles/users/*.yml`](profiles/users) | One file per person, **keyed by GitHub login** (filename == `user:` == login). Identity + role(s) + overrides. No device serials here. |
+| [`profiles/devices.yml`](profiles/devices.yml) | The device map: Mac serial → user key. Rendered into `manifests/index.json` for the daemon's lookup. |
+| [`render/`](render) | The deterministic renderer + golden-fixture tests — produces the daemon's Rendered Manifests. |
+| [`schema/*.schema.json`](schema) | JSON Schemas — the formal contract CI validates against. |
 
 ### How an app is described (catalog)
 
 ```yaml
 apps:
-  vscode:      { name: Visual Studio Code, source: cask,    id: visual-studio-code }
+  vscode:      { name: Visual Studio Code, source: cask,    id: visual-studio-code, version: latest }
   python:      { name: Python 3.12,        source: formula, id: python@3.12, version: "3.12" }
-  xcode:       { name: Xcode,              source: mas,     id: "497799835" }
 ```
 
-`source` tells Abra where to get it: `formula`/`cask` (Homebrew), `mas` (Mac App
-Store), or `direct` (a signed `.pkg`/`.dmg` over https, with a required `sha256`).
+`source` is `formula` or `cask` — Homebrew only (ADR-0020). App Store apps
+(iWork, Xcode, Trello…) are delivered by MDM/VPP, outside FOP.
 
 ### How a role is described
 
@@ -75,12 +70,15 @@ real ids via `var.account_ids`.
 ### How a person is assigned
 
 ```yaml
+# profiles/users/vireakyuth.yml — filename == user == GitHub login
 user: vireakyuth
-identity: { email: vireakyuth.neak@farmer1st.org, github: vireakyuth, awsUserName: vireakyuth.neak@farmer1st.org }
-devices:  [{ serial: C02XX1234567, hostname: vireakyuth-mac }]
-roles:    [devops-engineer]
-overrides: { add: [postman], remove: [] }     # tweak without forking a role
+identity: { email: vireakyuth.neak@farmer1st.org, github: vireakyuth }
+roles:    [backend-engineer, devops-engineer]
+overrides: { add: [figma] }        # optional tweak without forking a role
 ```
+
+Device serials live in [`profiles/devices.yml`](profiles/devices.yml)
+(`serial: user`), one line per enrolled Mac.
 
 ## Try it
 
@@ -107,7 +105,7 @@ is precisely the desired state Abra converges the Mac to.
 
 ## Onboarding with Terraform
 
-[`terraform/`](terraform) reads `fop/roles` and `fop/users` directly with
+[`terraform/`](terraform) reads `profiles/roles` and `profiles/users` directly with
 `yamldecode`, then for each user provisions:
 
 - **AWS** — **creates their IAM Identity Center (SSO) user** and assigns each
@@ -129,7 +127,7 @@ it; remove it and Terraform revokes it. Same GitOps model as the app side.
 Two systems split the work:
 
 - **GitHub Actions** ([`validate` workflow](.github/workflows/onboarding.yml))
-  checks the RBEC (schemas + cross-references) on every PR and push.
+  validates the Profiles (schemas + cross-references) on every PR and push.
 - **HCP Terraform** (app.terraform.io, VCS-driven workspace on this repo,
   working directory `terraform/`) posts a speculative plan on every PR and
   applies on merge to `main`. State lives in the workspace; every run is
@@ -139,7 +137,7 @@ Workspace setup checklist:
 1. app.terraform.io -> create org -> New workspace -> Version control workflow
    -> pick this repo.
 2. Settings: Terraform Working Directory = `terraform`; VCS triggers limited to
-   `terraform/` and `fop/`; apply method = Manual (recommended to start).
+   `terraform/` and `profiles/`; apply method = Manual (recommended to start).
 3. Variables: `cloudflare_account_id` (Terraform variable) +
    `CLOUDFLARE_API_TOKEN`, `GITHUB_TOKEN` (env vars, mark Sensitive). AWS:
    dynamic provider credentials (`TFC_AWS_PROVIDER_AUTH=true`,
@@ -160,8 +158,8 @@ workspace variables:
 
 ## Adding things
 
-- **New app** → add one entry to `fop/catalog.yml`, then list its key in a role.
-- **New role** → add `fop/roles/<role>.yml`; `make validate`.
-- **New hire** → add `fop/users/<user>.yml` with their identity, device, and role;
+- **New app** → add one entry to `profiles/catalog.yml`, then list its key in a role.
+- **New role** → add `profiles/roles/<role>.yml`; `make validate`.
+- **New hire** → add `profiles/users/<user>.yml` with their identity, device, and role;
   `make validate`, then `terraform apply` to grant cloud/GitHub access. Abra picks
   up the apps on the Mac's next heartbeat.

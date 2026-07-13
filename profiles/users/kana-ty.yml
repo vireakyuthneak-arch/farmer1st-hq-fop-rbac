@@ -1,0 +1,8 @@
+# Kana Ty — handle is provisional until their real GitHub login is confirmed
+schemaVersion: 1
+user: kana-ty
+identity:
+  email: kana.ty@farmer1st.org
+  fullName: Kana Ty
+roles:
+  - backend-engineer

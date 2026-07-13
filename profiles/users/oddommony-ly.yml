@@ -1,0 +1,8 @@
+# Oddommony Ly — handle is provisional until their real GitHub login is confirmed
+schemaVersion: 1
+user: oddommony-ly
+identity:
+  email: oddommony.ly@farmer1st.org
+  fullName: Oddommony Ly
+roles:
+  - backend-engineer

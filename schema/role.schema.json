@@ -14,6 +14,18 @@
       "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
       "uniqueItems": true
     },
+    "system": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+      "uniqueItems": true,
+      "description": "trust-plane installer ids (admin-requiring installs, e.g. docker-desktop) — rendered into the manifest's system[], installed by the daemon's root plane"
+    },
+    "whitelist": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^[a-z0-9@./-]+$" },
+      "uniqueItems": true,
+      "description": "tolerated self-installs (ADR-0011): brew names the daemon must never reap even though it didn't install them"
+    },
     "cloud": {
       "type": "object",
       "additionalProperties": false,

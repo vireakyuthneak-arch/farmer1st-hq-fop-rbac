@@ -1,168 +1,99 @@
-# Abra ↔ RBEC contract
+# fop-rbac ↔ daemon contract (via fop-appstore)
 
-What Abra (the background binary on each Mac — built separately, not in this
-repo) must read from the **RBEC** (Role-Based Entitlement Contract, the
-YAML under `fop/`) and what it is expected to do with it. This is the complete
-interface: an Abra implementation that follows this document needs nothing else
-from FOP.
+> **This replaces the retired "Abra clones this repo" model.** Per the FOP core
+> team alignment (2026-07-13) and ADR-0023, the daemon **never reads this
+> repo**. It polls **Rendered Manifests** in `farmer1st-common/fop-appstore`.
+> This repo's job is to *produce* those manifests. The authoritative spec is
+> `05.specs/02.abra/05-profiles-and-manifests.md`; this page is the working
+> summary for this repo.
 
-A working reference implementation of everything below exists in this repo as
-[`scripts/abra.sh`](../scripts/abra.sh) (one-shot bash) and
-[`scripts/abra_sim.py`](../scripts/abra_sim.py) (stateful simulator).
-
----
-
-## 1. Inputs Abra must read
-
-Three file sets, all plain YAML, all in this repo:
-
-| Path | One file per | Abra uses it to |
-|------|--------------|-----------------|
-| `fop/catalog.yml` | — (single file) | know **how** to install each app (source, id, version) |
-| `fop/roles/*.yml` | role | know **what** apps a role grants |
-| `fop/users/*.yml` | person | map **this device** to a person and their role(s) + overrides |
-
-Formal JSON Schemas live in [`schema/`](../schema): `catalog.schema.json`,
-`role.schema.json`, `user.schema.json`. Every file carries `schemaVersion: 1`;
-Abra should refuse files with a schemaVersion it does not understand.
-
-Abra needs **read-only** access to these files (git clone/pull, or a rendered
-copy delivered by CI). It never writes to the RBEC.
-
-## 2. Device → user resolution
-
-1. Read the Mac's hardware serial:
-   `system_profiler SPHardwareDataType` → `Serial Number` (e.g. `FCQN7GT76Y`).
-2. Find the **one** user file whose `devices[].serial` contains it:
-
-   ```yaml
-   # fop/users/vireakyuth.yml
-   user: vireakyuth
-   devices:
-     - serial: FCQN7GT76Y
-       hostname: vireakyuth-mac
-   roles:
-     - devops-engineer
-   ```
-
-3. If no user claims the serial: **do nothing** (an unassigned Mac is not an
-   error to converge, it's a machine outside the fleet — log and exit).
-
-The RBEC validator guarantees a serial is claimed by at most one user, so
-"first match" is safe.
-
-## 3. Resolving the desired app set
-
-For the resolved user:
+## The pipeline
 
 ```
-desired = union of apps[] across all roles in user.roles   # order-preserving, deduped
-        + user.overrides.add                                # extra apps for this person
-        - user.overrides.remove                             # apps this person must NOT get
+profiles/ (this repo)  ──render/render.py──▶  manifests/  ──repository_dispatch──▶
+fop-appstore (publishes)  ◀──ETag fast-poll──  fop daemon on each Mac
 ```
 
-- A user may have **multiple roles** (e.g. `[uiux-designer, project-manager]`);
-  the union is deduplicated.
-- Every name in `apps`, `overrides.add`, `overrides.remove` is a **catalog
-  key**, guaranteed by the validator to exist in `fop/catalog.yml`.
+- **Profiles** (`profiles/`): catalog + roles + users + `devices.yml` — the
+  human-edited config. CTO-gated PRs; validated by `scripts/validate.py`.
+- **Rendered Manifest** (`render/render.py` output): what the daemon consumes.
+  This repo holds **no appstore write credential** — CI dispatches
+  `publish-manifests` and the appstore's own workflow commits (ADR-0023).
+- The daemon identifies a machine by **serial → login** via
+  `manifests/index.json` (rendered from `profiles/devices.yml`) and fetches
+  `manifests/users/<login>.json`. Users are **keyed by GitHub login**
+  (filename == `user:` == login; enforced by the validator).
 
-`make resolve USER=<name>` (or `scripts/validate.py resolve <name>`) prints the
-exact expected result — use it as the oracle when testing an Abra build.
+## Rendered artifacts
 
-## 4. Installing: the catalog entry tells Abra how
+`manifests/index.json`:
 
-Each catalog entry:
-
-```yaml
-terraform:
-  name: Terraform
-  source: formula                  # formula | cask | mas | direct
-  id: hashicorp/tap/terraform      # meaning depends on source (below)
-  version: latest                  # 'latest' or a pinned string like "3.12"
-  category: iac
+```json
+{
+  "devices": { "FCQN7GT76Y": "vireakyuth" },
+  "users": {
+    "vireakyuth": { "path": "manifests/users/vireakyuth.json",
+                    "payload_sha256": "…", "version": 7 }
+  }
+}
 ```
 
-| `source` | `id` is | Install with | Notes |
-|----------|---------|--------------|-------|
-| `formula` | Homebrew formula name (may be tap-qualified, e.g. `hashicorp/tap/terraform`) | `brew install --formula <id>` | CLI tools |
-| `cask` | Homebrew cask token | `brew install --cask --adopt <id>` | GUI apps. `--adopt` takes over an existing copy instead of erroring |
-| `mas` | numeric Mac App Store id (quoted string) | **do not auto-install.** Detect presence (`mas list`, or the app bundle in `/Applications`); if missing, report it for MDM/VPP or a one-time manual App Store install | `mas install` needs a signed-in Apple account and can trigger admin prompts — the RBEC policy is cask-first, and `mas` is reserved for Apple-exclusive apps (iWork, Xcode, TestFlight) |
-| `direct` | https URL to a signed pkg/dmg | download → **verify `sha256`** → `installer -pkg` | `sha256` field is mandatory; a mismatch is a hard stop |
+`manifests/users/<login>.json` — schema `fop.rendered-manifest/v1`:
 
-Homebrew itself is a bootstrap prerequisite Abra must ensure before its first
-converge; it is not a catalog app.
+```json
+{
+  "schema": "fop.rendered-manifest/v1",
+  "user": "vireakyuth",
+  "brewfile": "brew \"git\"\ncask \"slack\"\n",
+  "system": ["docker-desktop"],
+  "whitelist": [],
+  "payload_sha256": "…"
+}
+```
 
-### `version` semantics
+- `brewfile` — verbatim, fed straight to `brew bundle`; **the renderer
+  resolves roles→apps, the daemon does not resolve**. Formulae + public casks
+  only (ADR-0020) — App Store / direct-download apps are out of FOP scope
+  (MDM/VPP handles those).
+- `system[]` — trust-plane installer ids (admin-requiring installs).
+- `whitelist[]` — tolerated self-installs the daemon must not reap (ADR-0011).
+- Arrays are always present, never null.
 
-- `latest` — track upstream: install if missing, **upgrade when outdated**.
-- pinned (e.g. `"3.12"`) — ensure present at that major/track (for Homebrew this
-  is usually encoded in the id itself: `python@3.12`, `node@20`); **never**
-  force-upgrade a pinned app.
+## payload_sha256 — the interop crux
 
-### Install placement / privileges
+The daemon recomputes this and **refuses** a manifest whose hash differs from
+the index (tamper → keep last-known-good). The recipe, byte-exact:
 
-- Casks: prefer `--appdir=$HOME/Applications` (no admin rights needed). Installs
-  into `/Applications` and `direct` pkgs need elevation — that belongs to Abra's
-  privileged plane, not the user session.
-- Inline `#` comments are legal YAML anywhere in the RBEC — parse accordingly
-  (use a real YAML parser; don't grep values).
+```python
+payload = {"brewfile": brewfile, "system": system or [], "whitelist": whitelist or []}
+canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=False)
+sha = hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+```
 
-## 5. Convergence rules (per app, idempotent)
+Golden fixture (verified identical to the daemon's Go `rbac.PayloadSHA256`):
+brewfile `tap "farmer1st/fop"\nbrew "htop"\ncask "visual-studio-code"\n`,
+system `[]`, whitelist `["docker"]` →
+`f81b15bfd39fdb77603b1146971e3f805afb4e016cc4d0ab7922d3b68cb74484`.
+`render/test_render.py` enforces this plus render determinism
+(render-twice → byte-identical) on every CI run. **Never ship a render with a
+failing golden test.**
 
-| Observed state | Action |
-|----------------|--------|
-| not installed | install |
-| installed, current | skip |
-| installed, outdated, `version: latest` | upgrade |
-| installed, pinned version | skip (never force-upgrade) |
-| app bundle already present but **not** managed by brew (manual install) | skip — do not create a duplicate copy |
-| `mas` app missing | report only (App Store / MDM install) — never trigger sign-in or admin prompts |
-| in a previous converge but no longer in `desired` | **reap** (uninstall) |
+## Out of scope for the daemon
 
-Abra runs this loop on a heartbeat (the reference cadence is minutes, not
-hours) and must be safe to re-run at any frequency: a converged machine
-produces zero actions.
+`cloud:` blocks in role files (AWS grants, GitHub teams, Cloudflare groups)
+are consumed by **Terraform** in this repo — the renderer ignores them and
+they never appear in a manifest. The spec contains no secrets.
 
-Failures must be **per-app and non-fatal**: one app failing to install must not
-stop the rest of the converge. Surface the underlying installer error (brew/mas
-output) in the log/report.
+## Local tooling (dev only — NOT the daemon's model)
 
-## 6. What the RBEC guarantees Abra (so it can skip re-checking)
-
-CI runs `make validate` on every change, which enforces:
-
-- every file matches its JSON Schema (required fields, `version` present,
-  `mas` ids numeric, `direct` entries carry a 64-hex `sha256`);
-- every app referenced by a role or an override exists in the catalog;
-- every role referenced by a user has a role file;
-- keys are lowercase kebab-case;
-- no device serial is claimed by two users.
-
-Abra may therefore treat a fetched RBEC as internally consistent, but should
-still fail gracefully on parse errors (a mid-edit state should never brick a
-converge — keep using the last good copy).
-
-## 7. Out of scope for Abra
-
-- `cloud:` blocks in role files (AWS account/permission set, GitHub org/teams)
-  are consumed by **Terraform** during onboarding, not by Abra. Abra ignores
-  them entirely.
-- The RBEC contains **no secrets** and no credentials; Abra must not expect or
-  store any there.
-
-## 8. Quick self-test for an Abra implementation
+`scripts/abra.sh` and `scripts/abra_sim.py` are local simulators that resolve
+profiles directly and converge a dev Mac via brew. Useful for testing what a
+manifest *will contain*; the production path is always
+render → appstore → daemon.
 
 ```bash
-make setup && make validate                    # spec is coherent
-make resolve USER=vireakyuth                   # expected app set (the oracle)
-bash scripts/abra.sh --dry-run                 # reference resolution on this Mac
-bash scripts/abra.sh --user yuthneak --dry-run    # forced-user resolution
-bash scripts/abra.sh --serial NOPE --dry-run   # unassigned device → clean no-op
+make validate                              # spec is coherent
+.venv/bin/python render/test_render.py     # golden hash + determinism
+.venv/bin/python render/render.py --out build   # what would be published
+bash scripts/abra.sh --dry-run             # local converge preview
 ```
-
-(For the multi-role union case, give any user a second role in their `roles:`
-list and re-run `resolve` — the union must be deduplicated.)
-
-An Abra build is correct when, for any user, its computed install plan matches
-`resolve`'s output, and running it twice in a row produces zero actions the
-second time.

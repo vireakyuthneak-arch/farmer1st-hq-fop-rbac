@@ -3,7 +3,7 @@
 #
 # Instead of hand-writing name/source/id, give it a brew token and it queries
 # `brew info`, figures out formula vs cask + the display name, and appends a
-# correct entry to fop/catalog.yml. Optionally also adds the key to a role.
+# correct entry to profiles/catalog.yml. Optionally also adds the key to a role.
 #
 # Usage:
 #   bash scripts/catalog-add.sh rectangle                    # add to catalog
@@ -15,8 +15,8 @@ set -uo pipefail
 export PATH="/opt/homebrew/bin:$PATH"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-CATALOG="$ROOT/fop/catalog.yml"
-ROLES_DIR="$ROOT/fop/roles"
+CATALOG="$ROOT/profiles/catalog.yml"
+ROLES_DIR="$ROOT/profiles/roles"
 
 TOKEN=""; KIND=""; ROLE=""; CATEGORY="uncategorized"; VERSION="latest"; DRY=0
 while [ $# -gt 0 ]; do
@@ -108,7 +108,7 @@ echo ""
 if [ "$DRY" = 1 ]; then echo "(dry-run — nothing written)"; exit 0; fi
 
 printf '%s\n' "$ENTRY" >> "$CATALOG"
-echo "-> appended to fop/catalog.yml"
+echo "-> appended to profiles/catalog.yml"
 
 if [ -n "$ROLE" ]; then
   RF="$ROLES_DIR/${ROLE%.yml}.yml"

@@ -27,22 +27,22 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from validate import load_all  # noqa: E402
+from validate import load_all, load_devices  # noqa: E402
 
 STATE_DIR = Path(__file__).resolve().parent.parent / ".abra-sim"
 
 
 def resolve_user(users, ident_serial, ident_user):
-    """Find the user by device serial (as Abra would, via MDM) or by handle."""
+    """Find the user by device serial (profiles/devices.yml) or by handle."""
     if ident_user:
         if ident_user not in users:
             sys.exit(f"unknown user '{ident_user}'")
         return ident_user, users[ident_user]
-    for uname, u in users.items():
-        for d in u.get("devices", []):
-            if d.get("serial") == ident_serial:
-                return uname, u
-    sys.exit(f"no user in the RBEC owns device serial '{ident_serial}'")
+    devices = (load_devices() or {}).get("devices") or {}
+    login = devices.get(ident_serial)
+    if login and login in users:
+        return login, users[login]
+    sys.exit(f"no user in devices.yml owns serial '{ident_serial}'")
 
 
 def desired_apps(catalog, roles, user):
@@ -135,7 +135,7 @@ def main():
     state["tick"] += 1
     installed = state["installed"]
 
-    serial = args.serial or (user.get("devices") or [{}])[0].get("serial", "?")
+    serial = args.serial or "?"
     print(f"\n\033[1mabra • heartbeat tick #{state['tick']}\033[0m")
     print(f"device {serial}  ->  user {uname}  (roles: {', '.join(user['roles'])})")
     print(f"desired: {len(desired)} apps\n")

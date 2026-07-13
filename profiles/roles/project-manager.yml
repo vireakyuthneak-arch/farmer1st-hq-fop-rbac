@@ -4,10 +4,6 @@ role: project-manager
 description: Planning, coordination, and delivery.
 
 apps:
-  # office suite (default in every profile)
-  - keynote
-  - pages
-  - numbers
   # collaboration
   - slack
   - notion

@@ -1,0 +1,10 @@
+# Samann Long — handle is provisional until their real GitHub login is confirmed
+# (email domain normalized from 'famer1st.org' (typo in source list))
+schemaVersion: 1
+user: samann-long
+identity:
+  email: samann.long@farmer1st.org
+  fullName: Samann Long
+roles:
+  - backend-engineer
+  - project-manager

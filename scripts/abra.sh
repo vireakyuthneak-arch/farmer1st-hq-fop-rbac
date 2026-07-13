@@ -27,9 +27,9 @@ set -uo pipefail
 export PATH="/opt/homebrew/bin:$PATH"
 
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-CATALOG="$ROOT/fop/catalog.yml"
-USERS_DIR="$ROOT/fop/users"
-ROLES_DIR="$ROOT/fop/roles"
+CATALOG="$ROOT/profiles/catalog.yml"
+USERS_DIR="$ROOT/profiles/users"
+ROLES_DIR="$ROOT/profiles/roles"
 
 DRY_RUN=0; FORCE_SERIAL=""; FORCE_USER=""; FORCE_ROLE=""
 while [ $# -gt 0 ]; do
@@ -110,7 +110,9 @@ else
   else
     SERIAL="${FORCE_SERIAL:-$(detect_serial)}"
     [ -n "$SERIAL" ] || { echo "could not read this Mac's serial" >&2; exit 1; }
-    USERFILE="$(grep -rl "serial: *$SERIAL\b" "$USERS_DIR" 2>/dev/null | head -1)"
+    login="$(awk -v s="$SERIAL" '$1==s":"{print $2; exit}' "$ROOT/profiles/devices.yml" 2>/dev/null)"
+    USERFILE=""
+    [ -n "$login" ] && [ -f "$USERS_DIR/$login.yml" ] && USERFILE="$USERS_DIR/$login.yml"
     if [ -z "$USERFILE" ]; then
       # Per the Abra contract: an unassigned Mac is outside the fleet, not an
       # error — log and exit cleanly so heartbeat runners don't alarm.

@@ -4,10 +4,6 @@ role: uiux-designer
 description: Product design, prototyping, and design systems.
 
 apps:
-  # office suite (default in every profile)
-  - keynote
-  - pages
-  - numbers
   # design
   - figma
   - sketch

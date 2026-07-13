@@ -1,6 +1,7 @@
 .venv/
 .DS_Store
 .abra-sim/
+build/
 .env
 README.local.md
 terraform/.terraform/

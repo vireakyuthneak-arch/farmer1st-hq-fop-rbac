@@ -1,0 +1,66 @@
+# Render Profiles -> Rendered Manifests, then hand off to fop-appstore.
+#
+# On merge to main: validate the spec, run the deterministic renderer (golden
+# hash test first — a hash drift would make the daemon reject every manifest),
+# then fire repository_dispatch at farmer1st-common/fop-appstore. Per ADR-0023
+# this repo holds NO appstore write credential — the appstore's own publish
+# workflow validates the dispatch against publishers.yml and commits the
+# manifests. The daemon polls the appstore, never this repo.
+#
+# Required secret: APPSTORE_DISPATCH_TOKEN — fine-grained PAT on
+# farmer1st-common/fop-appstore with contents:write (dispatch only).
+# Until it exists, the render still runs and uploads an artifact; the
+# dispatch step reports itself skipped.
+name: render-manifests
+
+on:
+  push:
+    branches: [main]
+    paths: ["profiles/**", "render/**", "schema/**", "scripts/validate.py"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+concurrency:
+  group: render-manifests # serialize publishes (ADR-0023)
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install pyyaml jsonschema
+
+      - name: Validate Profiles
+        run: python3 scripts/validate.py validate
+
+      - name: Golden hash + determinism tests
+        run: python3 render/test_render.py
+
+      - name: Render manifests
+        run: python3 render/render.py --out build
+
+      - name: Upload rendered manifests (inspection artifact)
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-manifests
+          path: build/manifests/
+
+      - name: Dispatch publish-manifests to fop-appstore
+        env:
+          TOKEN: ${{ secrets.APPSTORE_DISPATCH_TOKEN }}
+        run: |
+          if [ -z "$TOKEN" ]; then
+            echo "::notice::APPSTORE_DISPATCH_TOKEN not configured — render verified, dispatch skipped."
+            exit 0
+          fi
+          curl -sf -X POST \
+            -H "Authorization: Bearer $TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            https://api.github.com/repos/farmer1st-common/fop-appstore/dispatches \
+            -d "{\"event_type\":\"publish-manifests\",\"client_payload\":{\"source_repo\":\"$GITHUB_REPOSITORY\",\"sha\":\"$GITHUB_SHA\"}}"
+          echo "dispatched publish-manifests for $GITHUB_SHA"

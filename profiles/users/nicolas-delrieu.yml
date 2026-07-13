@@ -1,0 +1,9 @@
+# Nicolas Delrieu — handle is provisional until their real GitHub login is confirmed
+schemaVersion: 1
+user: nicolas-delrieu
+identity:
+  email: nicolas.delrieu@farmer1st.org
+  fullName: Nicolas Delrieu
+roles:
+  - backend-engineer
+  - devops-engineer

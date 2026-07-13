@@ -40,6 +40,12 @@ variable "enable_github" {
   default     = false
 }
 
+variable "enable_cloudflare" {
+  type        = bool
+  description = "Provision Cloudflare Access groups + dashboard members."
+  default     = true
+}
+
 variable "github_org_admins" {
   type        = list(string)
   description = <<-EOT

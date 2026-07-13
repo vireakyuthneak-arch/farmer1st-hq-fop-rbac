@@ -1,0 +1,10 @@
+# Laurent Lafon-barret — handle is provisional until their real GitHub login is confirmed
+schemaVersion: 1
+user: laurent-lafon-barret
+identity:
+  email: laurent@farmer1st.org
+  fullName: Laurent Lafon-barret
+roles:
+  - backend-engineer
+  - devops-engineer
+  - project-manager

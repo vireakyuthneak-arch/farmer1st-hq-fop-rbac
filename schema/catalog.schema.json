@@ -21,29 +21,18 @@
       "additionalProperties": false,
       "properties": {
         "name": { "type": "string", "minLength": 1 },
-        "source": { "enum": ["formula", "cask", "mas", "direct"] },
+        "source": {
+          "enum": ["formula", "cask"],
+          "description": "ADR-0020: Homebrew formulae + public casks only. App Store / direct-download apps are out of FOP scope (MDM/VPP)."
+        },
         "id": { "type": "string", "minLength": 1 },
         "version": {
           "type": "string",
           "minLength": 1,
           "description": "'latest' to track, or a specific pinned version"
         },
-        "category": { "type": "string" },
-        "sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" }
-      },
-      "allOf": [
-        {
-          "if": { "properties": { "source": { "const": "direct" } } },
-          "then": {
-            "required": ["sha256"],
-            "properties": { "id": { "pattern": "^https://" } }
-          }
-        },
-        {
-          "if": { "properties": { "source": { "const": "mas" } } },
-          "then": { "properties": { "id": { "pattern": "^[0-9]+$" } } }
-        }
-      ]
+        "category": { "type": "string" }
+      }
     }
   }
 }

@@ -8,7 +8,7 @@
 # created or stored for users.
 
 resource "cloudflare_zero_trust_access_group" "group" {
-  for_each   = local.cloudflare_groups
+  for_each   = var.enable_cloudflare ? local.cloudflare_groups : {}
   account_id = var.cloudflare_account_id
   name       = each.key
 
@@ -20,19 +20,27 @@ resource "cloudflare_zero_trust_access_group" "group" {
 # Dashboard membership: roles that declare cloud.cloudflare.dashboardRole get
 # their holders invited to the Cloudflare account (Cloudflare sends the email).
 data "cloudflare_account_roles" "all" {
+  count      = var.enable_cloudflare ? 1 : 0
   account_id = var.cloudflare_account_id
 }
 
 locals {
   # role name -> role id, resolved live from the account
-  cloudflare_role_ids = {
-    for r in data.cloudflare_account_roles.all.roles : r.name => r.id
-  }
+  cloudflare_role_ids = var.enable_cloudflare ? {
+    for r in data.cloudflare_account_roles.all[0].roles : r.name => r.id
+  } : {}
 }
 
 resource "cloudflare_account_member" "member" {
-  for_each      = local.cloudflare_members
+  for_each      = var.enable_cloudflare ? local.cloudflare_members : {}
   account_id    = var.cloudflare_account_id
   email_address = each.key
   role_ids      = [local.cloudflare_role_ids[each.value]]
+
+  lifecycle {
+    precondition {
+      condition     = contains(keys(local.cloudflare_role_ids), each.value)
+      error_message = "Role declares Cloudflare dashboardRole '${each.value}', which does not exist on this account. Valid: ${join(", ", keys(local.cloudflare_role_ids))}."
+    }
+  }
 }
