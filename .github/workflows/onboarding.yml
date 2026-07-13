@@ -28,3 +28,14 @@ jobs:
       - run: pip install pyyaml jsonschema
       - name: Validate RBEC (schemas + cross-references)
         run: python3 scripts/validate.py validate
+
+  terraform-lint:
+    runs-on: ubuntu-latest
+    defaults:
+      run: { working-directory: terraform }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hashicorp/setup-terraform@v3
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false -input=false
+      - run: terraform validate -no-color

@@ -40,6 +40,16 @@ variable "enable_github" {
   default     = false
 }
 
+variable "github_org_admins" {
+  type        = list(string)
+  description = <<-EOT
+    GitHub usernames that hold org OWNER rights. Members of this list get
+    role=admin in github_membership so Terraform never downgrades an owner
+    to plain member.
+  EOT
+  default     = ["vireakyuth"]
+}
+
 variable "account_ids" {
   type        = map(string)
   description = <<-EOT

@@ -8,14 +8,17 @@ terraform {
   # }
 
   required_version = ">= 1.6"
+  # Pinned to major versions (~>) so runs are reproducible; the committed
+  # .terraform.lock.hcl pins exact builds. Upgrade deliberately with
+  # `terraform init -upgrade` + a reviewed lockfile diff.
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 5.0"
+      version = "~> 5.0"
     }
     github = {
       source  = "integrations/github"
-      version = ">= 6.0"
+      version = "~> 6.0"
     }
     cloudflare = {
       source  = "cloudflare/cloudflare"

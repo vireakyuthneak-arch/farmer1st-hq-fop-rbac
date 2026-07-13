@@ -68,5 +68,9 @@ resource "aws_ssoadmin_account_assignment" "assignment" {
       condition     = contains(keys(var.account_ids), each.value.account)
       error_message = "Role grant references account '${each.value.account}', which is not in var.account_ids. Valid: ${join(", ", keys(var.account_ids))}."
     }
+    precondition {
+      condition     = !contains(["111111111111", "222222222222"], lookup(var.account_ids, each.value.account, ""))
+      error_message = "var.account_ids[\"${each.value.account}\"] is still the placeholder value — set the real 12-digit account id (HCP workspace variable) before enabling AWS."
+    }
   }
 }

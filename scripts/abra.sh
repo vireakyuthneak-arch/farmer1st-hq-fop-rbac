@@ -18,8 +18,8 @@
 #   bash scripts/abra.sh                 # auto-detect this Mac -> its user -> role apps
 #   bash scripts/abra.sh --dry-run       # show what it WOULD do
 #   bash scripts/abra.sh --serial XXXX   # pretend to be another Mac (testing)
-#   bash scripts/abra.sh --user test-user   # force a user (testing)
-#   bash scripts/abra.sh --role backend-developer   # force a role, skip lookup
+#   bash scripts/abra.sh --user yuthneak    # force a user (testing)
+#   bash scripts/abra.sh --role backend-engineer   # force a role, skip lookup
 #
 # Casks install into ~/Applications so no admin password is needed. mas apps
 # require being signed into the App Store; direct downloads are reported only.
@@ -111,7 +111,12 @@ else
     SERIAL="${FORCE_SERIAL:-$(detect_serial)}"
     [ -n "$SERIAL" ] || { echo "could not read this Mac's serial" >&2; exit 1; }
     USERFILE="$(grep -rl "serial: *$SERIAL\b" "$USERS_DIR" 2>/dev/null | head -1)"
-    [ -n "$USERFILE" ] || { echo "This Mac (serial $SERIAL) is not assigned to anyone in the RBEC." >&2; exit 1; }
+    if [ -z "$USERFILE" ]; then
+      # Per the Abra contract: an unassigned Mac is outside the fleet, not an
+      # error — log and exit cleanly so heartbeat runners don't alarm.
+      echo "This Mac (serial $SERIAL) is not assigned to anyone in the RBEC — nothing to do."
+      exit 0
+    fi
   fi
   who="$(basename "$USERFILE" .yml)"
   declare_roles="$(yaml_top_list "$USERFILE" roles | tr '\n' ' ')"

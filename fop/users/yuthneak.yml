@@ -1,10 +1,11 @@
 # Yuth Neak — Cloudflare admin via personal Gmail (no Mac enrolled).
+# No github handle: the role grants no GitHub access, and placeholders are
+# dangerous (a squatted handle would receive a real org invite).
 schemaVersion: 1
 user: yuthneak
 identity:
   email: nvireakyuth@gmail.com
   fullName: Yuth Neak
-  github: yuthneak   # placeholder — role grants no GitHub access, never used
 
 roles:
   - cloudflare-admin

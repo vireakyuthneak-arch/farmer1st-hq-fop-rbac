@@ -10,12 +10,16 @@
     "user": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
     "identity": {
       "type": "object",
-      "required": ["email", "github"],
+      "required": ["email"],
       "additionalProperties": false,
       "properties": {
         "email": { "type": "string", "format": "email" },
         "fullName": { "type": "string" },
-        "github": { "type": "string", "minLength": 1 },
+        "github": {
+          "type": "string",
+          "minLength": 1,
+          "description": "required only when a role grants GitHub teams — never use placeholders (handle squatting risk)"
+        },
         "awsUserName": { "type": "string", "minLength": 1 }
       }
     },

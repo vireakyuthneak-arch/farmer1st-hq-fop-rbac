@@ -74,6 +74,15 @@ def validate() -> int:
 
     app_keys = set((catalog.get("apps") or {}).keys())
 
+    # filename must equal the declared name — terraform and abra key off the
+    # file, so a mismatch means two identities for one person/role
+    for name, role in roles.items():
+        if role.get("role") != name:
+            errors.append(f"  roles/{name}.yml: 'role: {role.get('role')}' must match filename")
+    for name, user in users.items():
+        if user.get("user") != name:
+            errors.append(f"  users/{name}.yml: 'user: {user.get('user')}' must match filename")
+
     # role apps must exist in the catalog
     for name, role in roles.items():
         for a in role.get("apps", []):
@@ -96,6 +105,17 @@ def validate() -> int:
                 errors.append(f"  users/{name}.yml: device serial '{s}' already claimed by "
                               f"'{seen_serials[s]}'")
             seen_serials[s] = name
+
+        # a user whose roles grant GitHub teams needs a real github handle;
+        # users without GitHub-bearing roles must NOT carry placeholders
+        needs_github = any(
+            (roles.get(r, {}).get("cloud") or {}).get("github", {}).get("teams")
+            for r in user.get("roles", [])
+        )
+        has_github = bool((user.get("identity") or {}).get("github"))
+        if needs_github and not has_github:
+            errors.append(f"  users/{name}.yml: roles grant GitHub teams but "
+                          f"identity.github is missing")
 
     if errors:
         print("FOP spec INVALID:\n" + "\n".join(errors))

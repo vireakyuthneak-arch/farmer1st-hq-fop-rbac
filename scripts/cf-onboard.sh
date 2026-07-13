@@ -39,6 +39,15 @@ set -a; . "$ENV_FILE"; set +a
 [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ] || { echo "CLOUDFLARE_ACCOUNT_ID missing from .env" >&2; exit 1; }
 export TF_VAR_cloudflare_account_id="$CLOUDFLARE_ACCOUNT_ID"
 
+# --- split-brain guard: once HCP Terraform owns the workspace (cloud block
+# active in versions.tf), local applies would run against SEPARATE state and
+# double-create resources. Use the HCP dashboard from that point on. ---
+if grep -qE '^[[:space:]]*cloud[[:space:]]*\{' "$ROOT/terraform/versions.tf"; then
+  echo "HCP Terraform is active for this repo (cloud block in versions.tf)." >&2
+  echo "Run plans/applies from app.terraform.io instead of this script." >&2
+  exit 1
+fi
+
 # --- validate the RBEC first (never plan a broken spec) ---
 "$ROOT/.venv/bin/python" "$ROOT/scripts/validate.py" validate
 

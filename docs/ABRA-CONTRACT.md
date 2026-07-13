@@ -156,7 +156,7 @@ converge — keep using the last good copy).
 make setup && make validate                    # spec is coherent
 make resolve USER=vireakyuth                   # expected app set (the oracle)
 bash scripts/abra.sh --dry-run                 # reference resolution on this Mac
-bash scripts/abra.sh --user test-user --dry-run   # forced-user resolution
+bash scripts/abra.sh --user yuthneak --dry-run    # forced-user resolution
 bash scripts/abra.sh --serial NOPE --dry-run   # unassigned device → clean no-op
 ```
 
