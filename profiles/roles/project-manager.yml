@@ -15,6 +15,15 @@ apps:
   # utilities
   - chrome
   - rectangle
+  # from team app list 2026-07-14 (not installable via brew, handled elsewhere:
+  # Notes/Terminal = macOS native; Amphetamine/Xcode = App Store -> MDM/VPP;
+  # Chrome extension, Claude Code URL Handler, ohMyZsh = not brew; Plane = web app)
+  - claude-desktop
+  - wispr-flow
+  - figma
+  - codex
+  - spotify
+  - chatgpt
 
 cloud:
   github:

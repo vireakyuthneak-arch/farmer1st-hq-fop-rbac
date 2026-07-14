@@ -21,6 +21,31 @@ apps:
   - tableplus
   - postman
   - insomnia
+  # from team app list 2026-07-14 (not installable via brew, handled elsewhere:
+  # Notes/Terminal = macOS native; Amphetamine/Xcode = App Store -> MDM/VPP;
+  # Chrome extension, Claude Code URL Handler, ohMyZsh = not brew; Plane = web app)
+  - chrome
+  - claude-desktop
+  - claude-code
+  - codex
+  - chatgpt
+  - iterm2
+  - obsidian
+  - privileges
+  - pycharm
+  - zen
+  - nvm
+  - node-22
+  - fnm
+  - uv
+  - wrangler
+  - mlx
+  - ollama
+  - spotify
+
+# trust-plane installs (admin-requiring; daemon root plane handles these)
+system:
+  - docker-desktop
 
 cloud:
   aws:

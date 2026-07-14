@@ -245,3 +245,118 @@ apps:
     version: latest
     category: media
 
+  # --- team app list (2026-07-14, "Apps by Person") ---
+  claude-desktop:
+    name: Claude Desktop
+    source: cask
+    id: claude
+    version: latest
+    category: ai
+  claude-code:
+    name: Claude Code
+    source: cask
+    id: claude-code
+    version: latest
+    category: ai
+  chatgpt:
+    name: ChatGPT
+    source: cask
+    id: chatgpt
+    version: latest
+    category: ai
+  codex:
+    name: Codex
+    source: cask
+    id: codex
+    version: latest
+    category: ai
+  ollama:
+    name: Ollama
+    source: formula
+    id: ollama
+    version: latest
+    category: ai
+  mlx:
+    name: MLX
+    source: formula
+    id: mlx
+    version: latest
+    category: ai
+  iterm2:
+    name: iTerm2
+    source: cask
+    id: iterm2
+    version: latest
+    category: dev
+  obsidian:
+    name: Obsidian
+    source: cask
+    id: obsidian
+    version: latest
+    category: productivity
+  privileges:
+    name: Privileges
+    source: cask
+    id: privileges
+    version: latest
+    category: security
+  zen:
+    name: Zen Browser
+    source: cask
+    id: zen
+    version: latest
+    category: browser
+  wispr-flow:
+    name: Wispr Flow
+    source: cask
+    id: wispr-flow
+    version: latest
+    category: productivity
+  spotify:
+    name: Spotify
+    source: cask
+    id: spotify
+    version: latest
+    category: media
+  pycharm:
+    name: PyCharm CE   # `pycharm` cask = paid Professional; CE is the free default
+    source: cask
+    id: pycharm-ce
+    version: latest
+    category: dev
+  logi-options:
+    name: Logi Options+
+    source: cask
+    id: logi-options+
+    version: latest
+    category: utilities
+  nvm:
+    name: nvm
+    source: formula
+    id: nvm
+    version: latest
+    category: language
+  node-22:
+    name: Node.js 22
+    source: formula
+    id: node@22
+    version: "22"
+    category: language
+  fnm:
+    name: fnm (Fast Node Manager)
+    source: formula
+    id: fnm
+    version: latest
+    category: language
+  uv:
+    name: uv
+    source: formula
+    id: uv
+    version: latest
+    category: language
+  wrangler:
+    name: Wrangler
+    source: formula
+    id: cloudflare-wrangler   # bare `wrangler` does not exist in homebrew
+    version: latest
+    category: cloud
