@@ -104,6 +104,14 @@ def validate() -> int:
             if a not in app_keys:
                 errors.append(f"  roles/{name}.yml: unknown app '{a}' (not in catalog)")
 
+    # team rule (2026-07-14): any role that ships node/npm must also ship nvm
+    node_keys = {"node", "node-22"}
+    for name, role in roles.items():
+        apps = set(role.get("apps", []))
+        if apps & node_keys and "nvm" not in apps:
+            warnings.append(f"  roles/{name}.yml: has a node stack "
+                            f"({', '.join(sorted(apps & node_keys))}) but no nvm")
+
     # users must reference real roles; overrides must reference real apps
     for name, user in users.items():
         for r in user.get("roles", []):
