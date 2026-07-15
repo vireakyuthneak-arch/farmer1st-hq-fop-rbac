@@ -25,6 +25,13 @@ apps:
   - spotify
   - chatgpt
 
+# per-app roles (see profiles/applications.yml; strongest wins across roles)
+# NOTE: additive only — the Abra renderer ignores this key entirely
+appRoles:
+  roadmap: editor
+  leave-tracker: approver
+  slack: member
+
 cloud:
   github:
     org: farmer1st-hq

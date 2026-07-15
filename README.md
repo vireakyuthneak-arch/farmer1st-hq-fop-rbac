@@ -34,6 +34,7 @@ profiles, users, and the device map. Two consumers:
 | [`profiles/roles/*.yml`](profiles/roles) | One file per role. Apps by catalog key + `system[]` (trust-plane installs) + `whitelist[]` (tolerated self-installs) + the cloud **access** the role grants. |
 | [`profiles/users/*.yml`](profiles/users) | One file per person, **keyed by GitHub login** (filename == `user:` == login). Identity + role(s) + overrides. No device serials here. |
 | [`profiles/devices.yml`](profiles/devices.yml) | The device map: Mac serial → user key. Rendered into `manifests/index.json` for the daemon's lookup. |
+| [`profiles/applications.yml`](profiles/applications.yml) | The application registry: internal Cloudflare apps + external systems, each with its own ORDERED role vocabulary. Roles grant per-app roles via `appRoles:`; Terraform materializes the resolved result into the `fop-rbac` KV namespace (key `user:<email>`) that apps read read-only — see [`docs/APP-RBAC.md`](docs/APP-RBAC.md). |
 | [`render/`](render) | The deterministic renderer + golden-fixture tests — produces the daemon's Rendered Manifests. |
 | [`schema/*.schema.json`](schema) | JSON Schemas — the formal contract CI validates against. |
 
@@ -118,6 +119,10 @@ is precisely the desired state Abra converges the Mac to.
 - **Cloudflare** — Zero Trust Access group membership per role
   ([`cloudflare.tf`](terraform/cloudflare.tf)); Access policies on internal
   apps reference these groups.
+- **App RBAC** — per-user application roles materialized into the `fop-rbac`
+  Workers KV namespace ([`kv.tf`](terraform/kv.tf)); internal apps authorize
+  from it read-only instead of managing their own users
+  ([`docs/APP-RBAC.md`](docs/APP-RBAC.md)).
 
 Add a team to a role, or a role to a user, and the next `terraform apply` grants
 it; remove it and Terraform revokes it. Same GitOps model as the app side.

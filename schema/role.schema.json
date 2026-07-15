@@ -26,6 +26,12 @@
       "uniqueItems": true,
       "description": "tolerated self-installs (ADR-0011): brew names the daemon must never reap even though it didn't install them"
     },
+    "appRoles": {
+      "type": "object",
+      "propertyNames": { "pattern": "^[a-z0-9][a-z0-9-]*$" },
+      "additionalProperties": { "type": "string", "minLength": 1 },
+      "description": "app id (profiles/applications.yml) -> role held IN that app; multi-role users resolve strongest-wins"
+    },
     "cloud": {
       "type": "object",
       "additionalProperties": false,

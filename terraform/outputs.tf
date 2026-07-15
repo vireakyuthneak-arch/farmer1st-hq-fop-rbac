@@ -21,3 +21,14 @@ output "cloudflare_groups" {
   value       = local.cloudflare_groups
   sensitive   = true
 }
+
+output "app_rbac_namespace_id" {
+  description = "KV namespace id app teams bind (read-only) as FOP_RBAC in their wrangler config."
+  value       = var.enable_cloudflare ? cloudflare_workers_kv_namespace.fop_rbac[0].id : null
+}
+
+output "app_rbac_docs" {
+  description = "Per-user application-RBAC documents materialized into KV (plan-time audit view)."
+  value       = local.app_rbac_docs
+  sensitive   = true
+}

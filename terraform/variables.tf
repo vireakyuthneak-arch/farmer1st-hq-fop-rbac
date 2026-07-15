@@ -15,6 +15,16 @@ variable "cloudflare_account_id" {
   default     = "REPLACE-with-cloudflare-account-id"
 }
 
+# KV-only token (scope: Workers KV Storage Edit + Account Read). Set as a
+# second sensitive HCP workspace variable; local runs may leave it unset
+# (falls back to CLOUDFLARE_API_TOKEN, then to the env var).
+variable "CLOUDFLARE_KV_API_TOKEN" {
+  type        = string
+  description = "Cloudflare API token for the fop-rbac KV namespace (Workers KV Storage: Edit)."
+  sensitive   = true
+  default     = null
+}
+
 # Named to match the HCP workspace Terraform variable. When null (e.g. local
 # runs via cf-onboard.sh), the provider falls back to the CLOUDFLARE_API_TOKEN
 # environment variable — both storage styles work.

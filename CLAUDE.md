@@ -24,6 +24,7 @@ This repo owns the **Profiles, the renderer, and the Terraform** — not the dae
 | `profiles/roles/*.yml` | One per role: `apps` (catalog keys) + `cloud` access (aws `grants[]` of account × permissionSet, github org/teams, cloudflare accessGroups/dashboardRole). |
 | `profiles/users/*.yml` | One per person, keyed by GitHub login (filename == `user:` == login): `identity` + `roles` + `overrides`. |
 | `profiles/devices.yml` | Serial → user map (the daemon's device lookup). |
+| `profiles/applications.yml` | App registry: `kind` (internal-cf enforced via KV / external recorded-only) + ORDERED role vocabulary (weakest→strongest = conflict rule). Roles grant via top-level `appRoles:`; strongest wins for multi-role users. Materialized by `terraform/kv.tf` into the `fop-rbac` KV namespace, key `user:<email>` — consumer contract in `docs/APP-RBAC.md`. |
 | `render/` | Deterministic renderer + golden-fixture tests → Rendered Manifests for fop-appstore. |
 | `schema/*.schema.json` | JSON Schema contract Abra + CI validate against. |
 | `docs/ABRA-CONTRACT.md` | The full Abra ↔ RBEC interface spec (what Abra reads and how it must converge). |
@@ -43,6 +44,9 @@ make tf-plan                   # show GitHub/AWS access the spec resolves to (no
 ## Conventions
 
 - Add an **app**: one entry in `profiles/catalog.yml`, then reference its key in a role.
+- Add an **application** (per-app RBAC): one entry in `profiles/applications.yml`
+  + `appRoles:` lines in the granting roles. NEVER touch what Abra consumes —
+  `render/test_render.py` has a frozen-manifest-shape guard; keep it green.
 - Add a **role**: new `profiles/roles/<role>.yml`. Add a **person**: new
   `profiles/users/<user>.yml`. Run `make validate` after any change.
 - Keys are lowercase kebab-case. Every role app and every user override must

@@ -121,4 +121,64 @@ locals {
       ]), g)
     ]))
   }
+
+  # ---- per-app roles (profiles/applications.yml) --------------------------
+  # Registry: app id -> {name, kind, roles (ORDERED weakest->strongest),
+  # defaultRole?}. Direct indexing everywhere = a typo'd app id or a role
+  # outside the vocabulary is a HARD plan error (fail-closed), never a silent
+  # resolve-to-nothing.
+  applications = yamldecode(file("${path.module}/../profiles/applications.yml")).applications
+
+  # Guard: an appRoles grant naming an app that is NOT in the registry must
+  # abort the plan (the registry iteration below would otherwise silently
+  # ignore it — a fail-open we refuse). Mirrors spec_guard.
+  unknown_app_grants = distinct(flatten([
+    for rname, role in local.roles : [
+      for aid in keys(try(role.appRoles, {})) : "${rname}:${aid}"
+      if !contains(keys(local.applications), aid)
+    ]
+  ]))
+  app_grants_guard = length(local.unknown_app_grants) == 0 ? true : tobool(
+    "RBAC spec error: appRoles reference unknown application(s): ${join(", ", local.unknown_app_grants)} — add them to profiles/applications.yml or fix the typo."
+  )
+
+  # user -> app id -> effective role name. Strongest wins: highest index in
+  # the app's ordered vocabulary across every role the user holds; the app's
+  # defaultRole (when set) participates as a floor for every user.
+  user_app_roles = {
+    for uname, u in local.users : uname => {
+      # (guard forces evaluation: errors via tobool() on unknown grants)
+      for aid, app in local.applications :
+      aid => app.roles[max(concat(
+        [for role in local.user_roles[uname] :
+          index(app.roles, role.appRoles[aid])
+        if contains(keys(try(role.appRoles, {})), aid)],
+        try([index(app.roles, app.defaultRole)], [])
+      )...)]
+      if length(concat(
+        [for role in local.user_roles[uname] : 1
+        if contains(keys(try(role.appRoles, {})), aid)],
+        try([index(app.roles, app.defaultRole)], [])
+      )) > 0
+    }
+  }
+
+  # email -> the fop.rbac/v1 KV document (docs/APP-RBAC.md is the consumer
+  # contract). Deterministic jsonencode; deliberately NO timestamps/commit —
+  # a value changes iff the person's resolved entitlements change, so HCP
+  # plan diffs read as access diffs. Every user gets a doc (fail-closed
+  # consumers treat a missing key as no access; absent users ARE the signal).
+  app_rbac_docs = {
+    for uname, u in local.users : "user:${lower(u.identity.email)}" => jsonencode({
+      schema = "fop.rbac/v1"
+      user   = uname
+      email  = lower(u.identity.email)
+      roles  = sort(u.roles)
+      apps = { for aid, r in local.user_app_roles[uname] :
+      aid => { role = r } if local.applications[aid].kind == "internal-cf" }
+      external = { for aid, r in local.user_app_roles[uname] :
+      aid => { role = r } if local.applications[aid].kind == "external" }
+    })
+  }
 }
+

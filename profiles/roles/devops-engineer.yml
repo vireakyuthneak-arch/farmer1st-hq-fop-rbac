@@ -48,6 +48,12 @@ apps:
 system:
   - docker-desktop
 
+# per-app roles (see profiles/applications.yml; strongest wins across roles)
+# NOTE: additive only — the Abra renderer ignores this key entirely
+appRoles:
+  roadmap: editor
+  slack: member
+
 cloud:
   aws:
     grants:

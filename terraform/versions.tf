@@ -51,3 +51,11 @@ provider "cloudflare" {
   # (local runs), falls back to the CLOUDFLARE_API_TOKEN environment variable.
   api_token = var.CLOUDFLARE_API_TOKEN
 }
+
+# Second, KV-only token (Workers KV Storage: Edit — unavoidably account-wide,
+# so it must NOT ride on the Access/members token). Falls back to the primary
+# token when unset so local plans still evaluate.
+provider "cloudflare" {
+  alias     = "kv"
+  api_token = var.CLOUDFLARE_KV_API_TOKEN != null ? var.CLOUDFLARE_KV_API_TOKEN : var.CLOUDFLARE_API_TOKEN
+}

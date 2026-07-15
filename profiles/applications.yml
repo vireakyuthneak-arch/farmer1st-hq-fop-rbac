@@ -1,0 +1,29 @@
+# Application registry — every app that carries per-app roles, defined once.
+#
+#   kind: internal-cf -> enforced: materialized into the fop-rbac Cloudflare KV
+#                        namespace; the app reads it (see docs/APP-RBAC.md)
+#         external    -> recorded only: FOP declares the role, a human
+#                        configures the target system to match (never enforced)
+#   roles: ORDERED weakest -> strongest. The order is both the validation
+#          domain and the conflict rule: a user holding the app via several
+#          FOP roles gets the STRONGEST (highest-index) role.
+#   defaultRole: optional — every FOP user receives at least this role,
+#          resolved at materialization time.
+#
+# Role vocabularies below are PLACEHOLDERS (2026-07-15) — rename per app
+# owner input; the validator forces every grant to move atomically.
+schemaVersion: 1
+applications:
+  roadmap:
+    name: Roadmap
+    kind: internal-cf
+    roles: [viewer, editor, admin]
+  leave-tracker:
+    name: Leave Tracker
+    kind: internal-cf
+    roles: [employee, approver, admin]
+    defaultRole: employee
+  slack:
+    name: Slack
+    kind: external
+    roles: [member, admin]

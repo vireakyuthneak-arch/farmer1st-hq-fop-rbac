@@ -52,7 +52,7 @@ fi
 "$ROOT/.venv/bin/python" "$ROOT/scripts/validate.py" validate
 
 # --- terraform, Cloudflare resources only ---
-TARGETS=(-target=cloudflare_zero_trust_access_group.group -target=cloudflare_account_member.member)
+TARGETS=(-target=cloudflare_zero_trust_access_group.group -target=cloudflare_account_member.member -target=cloudflare_workers_kv_namespace.fop_rbac -target=cloudflare_workers_kv.user_doc)
 
 terraform -chdir="$ROOT/terraform" init -input=false -upgrade=false >/dev/null
 terraform -chdir="$ROOT/terraform" validate >/dev/null

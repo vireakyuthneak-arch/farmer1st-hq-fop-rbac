@@ -42,6 +42,20 @@ def test_render_is_deterministic():
             assert a.read_bytes() == b.read_bytes(), f"nondeterministic: {a.name}"
 
 
+def test_manifest_shape_is_frozen():
+    """The daemon's contract is FROZEN: rendered manifests carry exactly these
+    keys and nothing else. New profile features (appRoles, registries, ...)
+    must never leak into what Abra consumes."""
+    FROZEN_KEYS = {"schema", "user", "brewfile", "system", "whitelist", "payload_sha256"}
+    root = Path(__file__).resolve().parent.parent
+    with tempfile.TemporaryDirectory() as d:
+        subprocess.run([sys.executable, str(root / "render/render.py"), "--out", d],
+                       check=True, capture_output=True)
+        for f in (Path(d) / "manifests/users").glob("*.json"):
+            keys = set(json.loads(f.read_text()).keys())
+            assert keys == FROZEN_KEYS, f"{f.name}: manifest keys drifted: {keys ^ FROZEN_KEYS}"
+
+
 def test_index_matches_manifests():
     root = Path(__file__).resolve().parent.parent
     with tempfile.TemporaryDirectory() as d:
@@ -62,5 +76,6 @@ if __name__ == "__main__":
     test_golden_fixture()
     test_defaults_are_empty_arrays_not_null()
     test_render_is_deterministic()
+    test_manifest_shape_is_frozen()
     test_index_matches_manifests()
     print("all renderer tests passed (golden sha verified)")

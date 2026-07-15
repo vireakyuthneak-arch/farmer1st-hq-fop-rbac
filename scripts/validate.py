@@ -56,6 +56,11 @@ def load_devices():
     return load_yaml(path) if path.exists() else None
 
 
+def load_applications():
+    path = FOP / "applications.yml"
+    return load_yaml(path) if path.exists() else None
+
+
 def schema_errors(label, validator, doc):
     out = []
     for e in sorted(validator.iter_errors(doc), key=lambda e: list(e.path)):
@@ -67,10 +72,12 @@ def schema_errors(label, validator, doc):
 def validate() -> int:
     catalog, roles, users = load_all()
     devices = load_devices()
-    cat_v, role_v, user_v, dev_v = (load_schema("catalog.schema.json"),
-                                    load_schema("role.schema.json"),
-                                    load_schema("user.schema.json"),
-                                    load_schema("devices.schema.json"))
+    applications = load_applications()
+    cat_v, role_v, user_v, dev_v, app_v = (load_schema("catalog.schema.json"),
+                                           load_schema("role.schema.json"),
+                                           load_schema("user.schema.json"),
+                                           load_schema("devices.schema.json"),
+                                           load_schema("applications.schema.json"))
     errors = []
     warnings = []
 
@@ -82,6 +89,18 @@ def validate() -> int:
         for serial, login in (devices.get("devices") or {}).items():
             if login not in users:
                 errors.append(f"  devices.yml: serial '{serial}' maps to unknown user '{login}'")
+    if applications is None:
+        errors.append("  applications.yml: missing (the app registry is required "
+                      "— terraform reads it unconditionally)")
+        app_reg = {}
+    else:
+        errors += schema_errors("applications.yml", app_v, applications)
+        app_reg = applications.get("applications") or {}
+        for aid, app in app_reg.items():
+            default = app.get("defaultRole")
+            if default and default not in (app.get("roles") or []):
+                errors.append(f"  applications.yml: {aid}: defaultRole '{default}' "
+                              f"is not in its roles vocabulary")
     for name, doc in roles.items():
         errors += schema_errors(f"roles/{name}.yml", role_v, doc)
     for name, doc in users.items():
@@ -104,6 +123,25 @@ def validate() -> int:
             if a not in app_keys:
                 errors.append(f"  roles/{name}.yml: unknown app '{a}' (not in catalog)")
 
+    # appRoles: every app id must exist in the registry; every value must be
+    # inside that app's ordered vocabulary (fail-closed, like all cross-refs)
+    granted_apps = set()
+    for name, role in roles.items():
+        for aid, rval in (role.get("appRoles") or {}).items():
+            if aid not in app_reg:
+                errors.append(f"  roles/{name}.yml: appRoles references unknown "
+                              f"application '{aid}' (not in applications.yml)")
+                continue
+            granted_apps.add(aid)
+            vocab = app_reg[aid].get("roles") or []
+            if rval not in vocab:
+                errors.append(f"  roles/{name}.yml: appRoles.{aid}: '{rval}' is not "
+                              f"in that app's vocabulary ({', '.join(vocab)})")
+    for aid, app in app_reg.items():
+        if aid not in granted_apps and not app.get("defaultRole"):
+            warnings.append(f"  applications.yml: '{aid}' is granted by no role "
+                            f"and has no defaultRole (dead entry)")
+
     # team rule (2026-07-14): any role that ships node/npm must also ship nvm
     node_keys = {"node", "node-22"}
     for name, role in roles.items():
@@ -113,7 +151,16 @@ def validate() -> int:
                             f"({', '.join(sorted(apps & node_keys))}) but no nvm")
 
     # users must reference real roles; overrides must reference real apps
+    seen_emails = {}
     for name, user in users.items():
+        email = (user.get("identity") or {}).get("email", "")
+        if email != email.lower():
+            errors.append(f"  users/{name}.yml: email '{email}' must be lowercase "
+                          f"(it is the KV key)")
+        if email.lower() in seen_emails:
+            errors.append(f"  users/{name}.yml: email '{email}' already used by "
+                          f"'{seen_emails[email.lower()]}' (KV keys would collide)")
+        seen_emails[email.lower()] = name
         for r in user.get("roles", []):
             if r not in roles:
                 errors.append(f"  users/{name}.yml: unknown role '{r}'")
@@ -147,8 +194,9 @@ def validate() -> int:
     if warnings:
         print("FOP spec warnings:\n" + "\n".join(warnings))
     n_dev = len((devices or {}).get("devices") or {})
+    n_reg = len(app_reg)
     print(f"FOP spec OK — {len(app_keys)} apps, {len(roles)} roles, "
-          f"{len(users)} users, {n_dev} devices")
+          f"{len(users)} users, {n_dev} devices, {n_reg} applications")
     return 0
 
 
@@ -173,6 +221,23 @@ def resolve(username: str) -> int:
         if a in desired:
             desired.remove(a)
 
+    applications = (load_applications() or {}).get("applications") or {}
+    effective = {}
+    for aid, app in applications.items():
+        idxs = [app["roles"].index(roles[r]["appRoles"][aid])
+                for r in user["roles"]
+                if aid in (roles[r].get("appRoles") or {})]
+        if app.get("defaultRole"):
+            idxs.append(app["roles"].index(app["defaultRole"]))
+        if idxs:
+            effective[aid] = (app["roles"][max(idxs)], app["kind"])
+    if effective:
+        print(f"# Application roles (strongest-wins; what the fop-rbac KV doc carries):")
+        for aid in sorted(effective):
+            role_name, kind = effective[aid]
+            tag = "" if kind == "internal-cf" else "   (external — recorded, NOT enforced)"
+            print(f"#   {aid:<16} {role_name}{tag}")
+        print()
     print(f"# Desired app set for {username} (roles: {', '.join(user['roles'])})")
     print(f"# {len(desired)} apps — this is what Abra converges the Mac to:\n")
     for a in sorted(desired):
