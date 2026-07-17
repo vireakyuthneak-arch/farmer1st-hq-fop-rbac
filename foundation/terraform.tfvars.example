@@ -1,0 +1,17 @@
+# Copy to terraform.tfvars for a real run (do NOT commit the real file).
+# While offline = true these are optional — defaults let validate/plan run.
+
+management_region = "ap-southeast-1"
+allowed_regions   = ["ap-southeast-1"]
+
+# One monitored inbox, plus-addressed per account (aws+fop-sit@..., aws+fop-prod@...).
+account_email_base = "aws@farmer1st.org"
+
+# Or set explicit addresses per account:
+# account_emails = {
+#   production = "aws-prod@farmer1st.org"
+#   audit      = "security@farmer1st.org"
+# }
+
+# Flip to false only when a real management account exists and you intend to apply.
+offline = true

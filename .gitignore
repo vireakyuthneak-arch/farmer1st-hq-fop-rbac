@@ -4,8 +4,9 @@
 build/
 .env
 README.local.md
-terraform/.terraform/
-terraform/*.tfstate
-terraform/*.tfstate.*
-terraform/tfplan
+# Terraform working files — any layer (terraform/, foundation/, …)
+**/.terraform/
+**/*.tfstate
+**/*.tfstate.*
+**/tfplan
 __pycache__/
