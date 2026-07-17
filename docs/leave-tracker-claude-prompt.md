@@ -8,6 +8,10 @@
 3. Open Claude Code in the **leave-tracker** repo and paste everything under
    the line. Review the diff before deploying, as usual.
 
+Companion docs (in fop-rbac): [`leave-tracker-integration.md`](leave-tracker-integration.md)
+(reference + monitoring guide) and [`leave-tracker-rbac-overview.md`](leave-tracker-rbac-overview.md)
+(diagrams of how the two systems work together).
+
 ---
 
 You are working in the **leave-tracker** repo (a Cloudflare Worker: `src/worker.js`

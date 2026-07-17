@@ -138,3 +138,26 @@ D1 (or the remote one) and verify:
 - The D1 database, its schema, and every row (synced from the Profiles).
 - Who is `employee` / `approver` / `admin` — changed by editing roles in fop-rbac.
 - Adding a new admin/approver — a fop-rbac PR, not a Team-page click.
+
+## Monitoring (after integration)
+
+Cloudflare dashboard → **Storage & Databases → D1 → `fop-rbac`**:
+
+- **Metrics** — queries/day (reads vs writes), rows read/written, storage.
+  Your Worker's reads show up here. **Writes should only spike when the
+  fop-rbac pipeline syncs** — an unexplained write means someone is violating
+  the read-only contract, so this graph doubles as a tamper signal.
+- **Console** — run a standing sanity check right in the dashboard:
+  ```sql
+  SELECT email, role FROM app_role WHERE app='leave-tracker' ORDER BY role;
+  ```
+- **Tables** — browse the `app_role` rows directly.
+
+What the dashboard can't tell you: *who* ran a query, or any history of role
+changes (D1 only holds current state). The authoritative audit trail is the
+**fop-rbac GitHub repo**: every role change is a reviewed commit touching
+`profiles/`, and every materialization is a `sync-rbac-d1` run in its Actions
+tab. If a D1 row ever disagrees with the repo, the repo wins — re-running the
+workflow rewrites it. The failure signal worth subscribing to is a
+**failed `sync-rbac-d1` run** (GitHub notifications), which means the D1 has
+gone stale relative to the repo.
