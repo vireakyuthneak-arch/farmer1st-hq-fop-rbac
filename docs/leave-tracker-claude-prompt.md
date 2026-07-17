@@ -135,22 +135,22 @@ Do not change how leave data works. Only identity/authorization changes.
      PRIMARY KEY (email, app)
    );
    INSERT OR REPLACE INTO app_role VALUES
-     ('norbert@farmer1st.org',      'leave-tracker', 'admin',    'internal-cf'),
-     ('damon.hase@farmer1st.org',   'leave-tracker', 'approver', 'internal-cf'),
-     ('samann.long@farmer1st.org',  'leave-tracker', 'approver', 'internal-cf'),
-     ('laurent@farmer1st.org',      'leave-tracker', 'approver', 'internal-cf'),
-     ('kana.ty@farmer1st.org',      'leave-tracker', 'employee', 'internal-cf');
+     ('norbert@farmer1st.org',       'leave-tracker', 'admin',    'internal-cf'),
+     ('damon.hase@farmer1st.org',    'leave-tracker', 'admin',    'internal-cf'),
+     ('test.approver@farmer1st.org', 'leave-tracker', 'approver', 'internal-cf'),  -- synthetic: tests the tier
+     ('kana.ty@farmer1st.org',       'leave-tracker', 'employee', 'internal-cf');
    ```
 
 ## Acceptance tests (verify before deploying)
 
 Using `DEV_USER_EMAIL` to switch identities locally:
 
-1. `norbert@farmer1st.org` (admin): sees Settings + Team management; can
-   approve/reject; can add leave on someone's behalf.
-2. `damon.hase@farmer1st.org` (approver): **can** approve/reject and see all
-   logs/balances; **cannot** open Settings, holidays, or Team management
-   (403 from the API and hidden in the UI).
+1. `norbert@farmer1st.org` and `damon.hase@farmer1st.org` (admins): see Settings +
+   Team management; can approve/reject; can add leave on someone's behalf.
+2. `test.approver@farmer1st.org` (approver, from the local seed): **can**
+   approve/reject and see all logs/balances; **cannot** open Settings, holidays,
+   or Team management (403 from the API and hidden in the UI). No one holds this
+   tier in production yet, but the gating must work for when someone does.
 3. `kana.ty@farmer1st.org` (employee): sees only their own balances/requests;
    approve endpoints return 403.
 4. An email with **no row** in `app_role`: behaves as `employee` (fail closed).

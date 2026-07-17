@@ -122,9 +122,11 @@ deploy, no restart.
 Local dev uses `DEV_USER_EMAIL`. Point your local `FOP_RBAC_DB` at a seeded local
 D1 (or the remote one) and verify:
 
-1. `norbert@farmer1st.org` → sees **Settings** and can approve (admin).
-2. A program manager (`damon.hase@farmer1st.org`) → **can approve/reject**, but
-   **cannot** open Settings or manage members (approver).
+1. `norbert@farmer1st.org` and `damon.hase@farmer1st.org` → full admin: Settings,
+   team management, approve/reject (both hold `admin`).
+2. The `approver` tier has no holders yet — verify its gating with a locally
+   seeded row (can approve/see all, cannot open Settings), so future approvers
+   work without app changes.
 3. Anyone else → sees **only their own** balances and requests (employee).
 4. Simulate `FOP_RBAC_DB` failing → non-break-glass users degrade to `employee`
    (fail closed); the break-glass admin still gets in.

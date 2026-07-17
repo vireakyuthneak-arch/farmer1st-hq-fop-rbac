@@ -29,7 +29,7 @@ apps:
 # NOTE: additive only — the Abra renderer ignores this key entirely
 appRoles:
   roadmap: editor
-  leave-tracker: approver
+  leave-tracker: admin      # PMs administer the leave tracker (approve + settings + members)
   slack: member
 
 cloud:
