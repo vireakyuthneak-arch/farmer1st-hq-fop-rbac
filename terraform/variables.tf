@@ -69,13 +69,19 @@ variable "github_org_admins" {
 variable "account_ids" {
   type        = map(string)
   description = <<-EOT
-    Maps the logical account names used in FOP roles (cloud.aws.grants[].account)
+    Maps the logical environment names used in FOP roles (cloud.aws.grants[].account)
     to real 12-digit AWS account IDs. Keeps account numbers out of the FOP spec.
     Permission sets are NOT mapped here — they are defined as code in
     aws-foundation.tf and referenced by name from the roles.
+
+    These keys match the foundation layer's output.account_ids (foundation/) —
+    feed the real ids in from there via HCP remote state (or copy them) at go-live.
   EOT
   default = {
-    farmer1st-dev  = "111111111111" # REPLACE with the real dev account id
-    farmer1st-prod = "222222222222" # REPLACE with the real prod account id
+    sandbox    = "100000000001" # REPLACE from foundation output.account_ids
+    sit        = "100000000002" # REPLACE
+    staging    = "100000000003" # REPLACE
+    production = "100000000004" # REPLACE
+    audit      = "100000000005" # REPLACE
   }
 }

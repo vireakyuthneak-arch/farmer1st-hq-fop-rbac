@@ -55,11 +55,15 @@ appRoles:
 
 cloud:
   aws:
+    # Developer persona: write in the throwaway sandbox, read-only in the shared
+    # pipeline-deployed environments, nothing in production.
     grants:
-      - account: farmer1st-dev
-        permissionSet: Developer
-      - account: farmer1st-prod
-        permissionSet: ReadOnly
+      - account: sandbox
+        permissionSet: PowerUser
+      - account: sit
+        permissionSet: ViewOnly
+      - account: staging
+        permissionSet: ViewOnly
   github:
     org: farmer1st-hq
     teams:

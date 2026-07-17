@@ -56,11 +56,17 @@ appRoles:
 
 cloud:
   aws:
+    # DevOps persona: sandbox write; read-only + operational in non-prod; prod is
+    # ViewOnly standing — production WRITE is JIT only (Admin), never granted here.
     grants:
-      - account: farmer1st-dev
-        permissionSet: DevOpsEngineer
-      - account: farmer1st-prod
-        permissionSet: Developer
+      - account: sandbox
+        permissionSet: PowerUser
+      - account: sit
+        permissionSet: DevOpsOps
+      - account: staging
+        permissionSet: DevOpsOps
+      - account: production
+        permissionSet: ViewOnly
   github:
     org: farmer1st-hq
     teams:
