@@ -32,3 +32,13 @@ output "app_rbac_docs" {
   value       = local.app_rbac_docs
   sensitive   = true
 }
+
+output "app_rbac_d1_database_id" {
+  description = "D1 database id app teams bind (read-only) as FOP_RBAC_DB in their wrangler config. Also feed to the CI sync (sync-rbac-d1.yml)."
+  value       = var.enable_cloudflare ? cloudflare_d1_database.fop_rbac[0].id : null
+}
+
+output "app_rbac_d1_database_name" {
+  description = "D1 database name for `wrangler d1 execute`."
+  value       = var.enable_cloudflare ? cloudflare_d1_database.fop_rbac[0].name : null
+}

@@ -1,0 +1,10 @@
+# Norbert Binot — CEO.
+# Email-only: app-RBAC keys by email, so no GitHub login is required for this
+# user. Add identity.github later only if they need GitHub/AWS access too.
+schemaVersion: 1
+user: norbert-binot
+identity:
+  email: norbert@farmer1st.org
+  fullName: Norbert Binot
+roles:
+  - executive

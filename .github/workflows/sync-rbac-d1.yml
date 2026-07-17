@@ -1,0 +1,71 @@
+# Sync resolved app-RBAC into the fop-rbac Cloudflare D1 database.
+#
+# Terraform creates the D1 database (terraform/d1.tf) but cannot write rows, so
+# this job is the writer: it regenerates the SQL from the Profiles and applies it
+# with `wrangler d1 execute`. Runs on merge to main whenever roles/apps change —
+# consumer apps (leave-tracker) read the D1 read-only at runtime and never need
+# to redeploy when a role changes.
+#
+# Required repo secrets:
+#   CLOUDFLARE_API_TOKEN   token with **D1: Edit** + Account: Read
+#   CLOUDFLARE_ACCOUNT_ID  the account that owns the fop-rbac D1
+# Set D1_DATABASE_NAME below to the terraform output app_rbac_d1_database_name
+# (default "fop-rbac").
+name: sync-rbac-d1
+
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+    paths: ["profiles/**", "schema/**", ".github/workflows/sync-rbac-d1.yml"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rbac-d1-sync
+  cancel-in-progress: false
+
+env:
+  D1_DATABASE_NAME: "fop-rbac"
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: pip install pyyaml jsonschema
+
+      - name: Validate spec (fail-closed gate before we touch the DB)
+        run: python3 scripts/validate.py validate
+
+      - name: Generate the sync SQL
+        run: python3 scripts/render-d1.py
+
+      # Minimal wrangler config so the d1 commands resolve the account.
+      - name: Write wrangler config
+        run: |
+          cat > wrangler.toml <<EOF
+          name = "fop-rbac-sync"
+          compatibility_date = "2026-01-01"
+          EOF
+
+      - name: Provision the D1 (create if missing) + sync the rows
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          set -euo pipefail
+          W="npx --yes wrangler@4"
+          if ! $W d1 info "$D1_DATABASE_NAME" >/dev/null 2>&1; then
+            echo "Creating D1 database $D1_DATABASE_NAME…"
+            $W d1 create "$D1_DATABASE_NAME"
+          else
+            echo "D1 database $D1_DATABASE_NAME already exists."
+          fi
+          echo "Applying schema + resolved rows…"
+          $W d1 execute "$D1_DATABASE_NAME" --remote --yes --file build/rbac.sql
+          echo "----- database id — bind this as FOP_RBAC_DB in leave-tracker -----"
+          $W d1 info "$D1_DATABASE_NAME"

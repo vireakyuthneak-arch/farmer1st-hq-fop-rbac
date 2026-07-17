@@ -1,0 +1,15 @@
+# Executive
+schemaVersion: 1
+role: executive
+description: Company leadership — administers internal tools (e.g. approves/settings on Leave Tracker).
+
+# Leadership carries few installed apps; this role exists mainly to grant the
+# admin tier on internal apps via appRoles below.
+apps:
+  - slack
+  - chrome
+
+# per-app roles (see profiles/applications.yml; strongest wins across roles)
+appRoles:
+  leave-tracker: admin      # full admin: approve/reject + settings + members
+  slack: member

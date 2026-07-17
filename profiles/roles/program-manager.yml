@@ -1,6 +1,6 @@
-# Project Manager
+# Program Manager
 schemaVersion: 1
-role: project-manager
+role: program-manager
 description: Planning, coordination, and delivery.
 
 apps:
