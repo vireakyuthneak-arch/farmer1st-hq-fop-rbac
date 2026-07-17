@@ -115,6 +115,30 @@ re-runs the sync (`wrangler d1 execute` against the `fop-rbac` D1) and the rows
 update. Your Worker reads the new value on the very next request — no build, no
 deploy, no restart.
 
+### Staying up to date — the freshness rules
+
+The guarantee above holds **only if the role is looked up fresh on every
+request**. These are the ways to accidentally break it — all forbidden:
+
+1. **No isolate-global memoization.** Workers isolates live across requests
+   (the app already uses that for its `ready` init flag). Never store a
+   role/email→role map in a module-scope variable — it would pin stale roles
+   for the isolate's lifetime (minutes to hours).
+2. **No client-side role storage.** Never put the role in a cookie, session,
+   JWT claim, or localStorage and trust it on later requests. The role is
+   server-side state, re-read per request; the client only ever receives it
+   for UI display.
+3. **No copying into the app's DB.** Never mirror `app_role` rows into the
+   leave-tracker D1 ("for performance") — that recreates the stale
+   `employees.role` column this integration removes.
+4. **No Cache API / KV caching of the lookup.** The query is a single-row
+   primary-key `SELECT` — microseconds on D1. It does not need a cache.
+
+Verification that freshness works (acceptance test 6): change a row in the
+local RBAC D1, re-request, and confirm the behavior changes **without** a
+Worker restart or redeploy. Worst-case propagation for a real change is then:
+merge → sync run (~1 min) → next request.
+
 ---
 
 ## Test it

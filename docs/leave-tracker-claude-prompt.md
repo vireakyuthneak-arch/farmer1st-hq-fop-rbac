@@ -170,5 +170,12 @@ Using `DEV_USER_EMAIL` to switch identities locally:
   leave data stays exactly as it is.
 - Rename the existing `DB` binding or change business rules (proration,
   auto-approval, balances).
-- Cache a role beyond a single request (no cross-request memoization; the
-  no-redeploy guarantee depends on fresh reads).
+- Cache a role beyond a single request — the no-redeploy guarantee depends on
+  fresh reads. Specifically forbidden: (a) module-scope/isolate-global
+  memoization of email→role (isolates persist across requests, like the
+  existing `ready` flag does); (b) storing the role in a cookie, session, JWT
+  claim, or localStorage and trusting it later — the client may only receive
+  the role for UI display; (c) mirroring `app_role` rows into the app's own D1
+  (that recreates the stale `employees.role` this change removes); (d) Cache
+  API / KV caching of the lookup. The query is a single-row primary-key SELECT
+  — it needs no cache.
