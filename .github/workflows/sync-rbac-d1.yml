@@ -79,14 +79,26 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: |
           set -euo pipefail
-          W="npx --yes wrangler@4"
-          if ! $W d1 info "$D1_DATABASE_NAME" >/dev/null 2>&1; then
-            echo "Creating D1 database $D1_DATABASE_NAME…"
-            $W d1 create "$D1_DATABASE_NAME"
-          else
+          API="https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database"
+          # Create via the raw API (not wrangler) so a failure surfaces the FULL
+          # Cloudflare error instead of a generic auth message.
+          if curl -s -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" "$API?name=$D1_DATABASE_NAME&per_page=100" \
+               | grep -q "\"name\": *\"$D1_DATABASE_NAME\""; then
             echo "D1 database $D1_DATABASE_NAME already exists."
+          else
+            echo "Creating D1 database $D1_DATABASE_NAME…"
+            resp=$(curl -s -X POST "$API" \
+              -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
+              -H "Content-Type: application/json" \
+              --data "{\"name\":\"$D1_DATABASE_NAME\"}")
+            if ! echo "$resp" | grep -q '"success": *true'; then
+              echo "::error::D1 create failed. Full API response: $resp"
+              echo "::error::Auth error code 10000 here almost always means the token's D1 permission is READ — it must be EDIT (listing works with Read, creating does not)."
+              exit 1
+            fi
+            echo "Created."
           fi
           echo "Applying schema + resolved rows…"
-          $W d1 execute "$D1_DATABASE_NAME" --remote --yes --file build/rbac.sql
+          npx --yes wrangler@4 d1 execute "$D1_DATABASE_NAME" --remote --yes --file build/rbac.sql
           echo "----- database id — bind this as FOP_RBAC_DB in leave-tracker -----"
-          $W d1 info "$D1_DATABASE_NAME"
+          npx --yes wrangler@4 d1 info "$D1_DATABASE_NAME"
