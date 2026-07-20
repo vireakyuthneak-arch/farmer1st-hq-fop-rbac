@@ -127,6 +127,13 @@ Do not change how leave data works. Only identity/authorization changes.
      buttons, settings) off `/api/me`'s `role`. Show approver UI (pending queue,
      team balances) when role is `approver` or `admin`; settings/team management
      only for `admin`.
+   - **Team page role visibility (read-only):** admins should still SEE who holds
+     which role. In `GET /api/employees`, enrich each row with `rbacRole` by
+     reading the RBAC D1 fresh (one `SELECT email, role FROM app_role WHERE
+     app='leave-tracker'`, mapped by lowercased email; display-only — never an
+     authorization input; default missing/unknown to `employee`). Render it in
+     the Team table as a read-only chip with a note that roles are managed
+     centrally in FOP RBAC — no edit control.
 
 5. **Local dev.** The remote `fop-rbac` D1 isn't available to Miniflare, so for
    local testing create the table in the *local* emulated `FOP_RBAC_DB` and seed
