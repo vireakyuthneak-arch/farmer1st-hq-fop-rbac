@@ -3,6 +3,7 @@ schemaVersion: 1
 user: angelique-delamere
 identity:
   email: angelique.delamere@farmer1st.org
+  localAccount: angelique.delamere # macOS login == email local-part (company convention)
   fullName: Angelique Delamere
 roles:
   - uiux-designer

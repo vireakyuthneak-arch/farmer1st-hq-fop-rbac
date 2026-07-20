@@ -3,6 +3,7 @@ schemaVersion: 1
 user: voathnak-lim
 identity:
   email: voathnak.lim@farmer1st.org
+  localAccount: voathnak.lim # macOS login == email local-part (company convention)
   fullName: Voathnak Lim
 roles:
   - backend-engineer

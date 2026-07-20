@@ -3,6 +3,7 @@ schemaVersion: 1
 user: kana-ty
 identity:
   email: kana.ty@farmer1st.org
+  localAccount: kana.ty # macOS login == email local-part (company convention)
   fullName: Kana Ty
 roles:
   - backend-engineer

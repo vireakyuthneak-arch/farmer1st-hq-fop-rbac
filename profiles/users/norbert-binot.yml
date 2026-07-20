@@ -5,6 +5,7 @@ schemaVersion: 1
 user: norbert-binot
 identity:
   email: norbert@farmer1st.org
+  localAccount: norbert # macOS login == email local-part (company convention)
   fullName: Norbert Binot
 roles:
   - executive

@@ -3,6 +3,7 @@ schemaVersion: 1
 user: laurent-lafon-barret
 identity:
   email: laurent@farmer1st.org
+  localAccount: laurent # macOS login == email local-part (company convention)
   fullName: Laurent Lafon-barret
 roles:
   - backend-engineer

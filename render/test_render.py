@@ -69,9 +69,11 @@ def test_local_account_defaults_and_stays_out_of_payload():
                        check=True, capture_output=True)
         docs = {f.stem: json.loads(f.read_text())
                 for f in (Path(d) / "manifests/users").glob("*.json")}
-        # vireakyuth declares a differing macOS account; everyone else defaults
+        # company users declare macOS accounts (email local-part convention);
+        # yuthneak (personal-gmail test user, no company Mac) rides the default
         assert docs["vireakyuth"]["local_account"] == "vireakyuth.neak"
-        assert docs["damon-hase"]["local_account"] == "damon-hase"
+        assert docs["damon-hase"]["local_account"] == "damon.hase"
+        assert docs["yuthneak"]["local_account"] == "yuthneak"
         for m in docs.values():  # never part of the hash
             assert payload_sha256(m["brewfile"], m["system"], m["whitelist"]) \
                 == m["payload_sha256"]

@@ -3,6 +3,7 @@ schemaVersion: 1
 user: nicolas-delrieu
 identity:
   email: nicolas.delrieu@farmer1st.org
+  localAccount: nicolas.delrieu # macOS login == email local-part (company convention)
   fullName: Nicolas Delrieu
 roles:
   - backend-engineer

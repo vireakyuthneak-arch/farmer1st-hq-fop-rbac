@@ -3,6 +3,7 @@ schemaVersion: 1
 user: sienghor-chen
 identity:
   email: sienghor.chen@farmer1st.org
+  localAccount: sienghor.chen # macOS login == email local-part (company convention)
   fullName: Sienghor Chen
 roles:
   - backend-engineer

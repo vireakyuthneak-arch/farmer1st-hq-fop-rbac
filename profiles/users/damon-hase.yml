@@ -3,6 +3,7 @@ schemaVersion: 1
 user: damon-hase
 identity:
   email: damon.hase@farmer1st.org
+  localAccount: damon.hase # macOS login == email local-part (company convention)
   fullName: Damon Hase
 roles:
   - program-manager

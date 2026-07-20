@@ -4,6 +4,7 @@ schemaVersion: 1
 user: samann-long
 identity:
   email: samann.long@farmer1st.org
+  localAccount: samann.long # macOS login == email local-part (company convention)
   fullName: Samann Long
 roles:
   - backend-engineer

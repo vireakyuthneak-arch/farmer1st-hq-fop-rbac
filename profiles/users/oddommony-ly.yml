@@ -3,6 +3,7 @@ schemaVersion: 1
 user: oddommony-ly
 identity:
   email: oddommony.ly@farmer1st.org
+  localAccount: oddommony.ly # macOS login == email local-part (company convention)
   fullName: Oddommony Ly
 roles:
   - backend-engineer
