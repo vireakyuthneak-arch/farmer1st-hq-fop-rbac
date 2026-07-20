@@ -175,6 +175,22 @@ Using `DEV_USER_EMAIL` to switch identities locally:
    the rest — read-only chips sourced from the RBAC D1, with no role editor
    anywhere in the UI, and the "managed centrally in FOP RBAC" note visible.
 
+## Before deploying — critical security gate
+
+This Worker trusts the `Cf-Access-Authenticated-User-Email` header. Behind
+**Cloudflare Access** that header is injected by Cloudflare and cannot be
+forged. On a bare `workers.dev` URL with no Access in front, **anyone on the
+internet can send that header and become any admin** — no password needed.
+Therefore, strictly in this order:
+
+1. Create the Cloudflare Access application covering the app's URL
+   (Google SSO, `@farmer1st.org`) — in the **company** account.
+2. Only then deploy. Production must bind the company database id used
+   throughout this prompt (`9e70ef05-5e3f-4177-a457-daf12bf0dffd`) — never any
+   other copy of the database.
+3. Verify after deploy: an incognito/logged-out request must hit the Access
+   login wall, never the app.
+
 ## Do NOT
 
 - Write to `FOP_RBAC_DB` (SELECT only — fop-rbac CI owns the rows).
