@@ -1,86 +1,52 @@
-# Abra WS-A field test — findings (real Mac, real manifest)
+# Abra WS-A field test — findings
 
-**Date:** 2026-07-20 · **Machine:** vireakyuth's Mac (serial `FCQN7GT76Y`, mapped in
-`profiles/devices.yml`) · **Abra:** built from `8a4af78` (pre-freeze WS-A) ·
-**Manifest:** the real rendered `users/vireakyuth.json` from this repo.
+**2026-07-20 · vireakyuth's Mac** (serial `FCQN7GT76Y`, mapped in `devices.yml`) ·
+abra built from `8a4af78` · driven unprivileged via the dev affordances
+(`ABRA_DESIRED_STATE`, verify → compute → publish harness) against the real
+rendered `users/vireakyuth.json`. Abra repo not modified.
 
-**Method:** unprivileged harness using abra's own dev affordances
-(`ABRA_DESIRED_STATE`, `ABRA_MACHINE_TOKEN`): drove `rbac.VerifyManifest →
-desiredstate.Compute → Publish`, then the real `convenience plan`,
-`reap --dry-run`, and two `apply` attempts. The abra repo was not modified
-(harness injected via `go build -overlay`).
+**Contract verified ✅** — `rbac.PayloadSHA256` matches this repo's renderer
+byte-for-byte on live manifests; all 14 Go packages test green; every guard
+failed closed (untrusted tap, `local_account` mismatch, reap). No half-done
+states.
 
-## The contract holds ✅
+## Findings
 
-- `rbac.PayloadSHA256` reproduced this repo's renderer-declared hashes
-  **byte-for-byte on live production manifests** — and real manifests fed
-  through the golden fixture tests pass.
-- All 14 Go packages test green on this machine.
-- Every guard failed **closed**: untrusted tap stopped brew, `local_account`
-  mismatch stopped converge (exit 13), reap removed nothing it shouldn't.
-  No half-done states anywhere.
+1. **[decision needed] GUI casks can't install for standard (non-admin) users.**
+   22 of 27 entitled apps failed writing `/Applications` (brew escalates to
+   sudo; non-admin can't). `brewEnv`'s sealed env (rightly) blocks external
+   `HOMEBREW_CASK_OPTS`, so only abra can fix it.
+   **Proposal:** convenience plane passes `--appdir=$HOME/Applications --adopt`
+   (user plane → user Applications; adopt handles pre-existing manual installs).
+   Pkg-installer casks (`logi-options+`) need root regardless → `system[]`/MDM;
+   fop-rbac will reclassify once direction is confirmed.
 
-## Findings (priority order)
+2. **`system[]` missing from the reap allowed-set** — a brew-installed
+   `docker-desktop` (system[] in the roles) showed under "Would uninstall
+   casks". Suggest `Compute` adds `m.System` to `Reap.Allowed.Casks`.
+   Interim: per-user `overrides.add` in this repo.
 
-### 1. [design decision needed] Convenience-plane cask installs require admin on standard-user Macs
+3. **`local_account` needs a mapping source** — it defaults to the GitHub
+   login; my macOS account is `vireakyuth.neak`, so `apply` refused (exit 13 —
+   correct guard, wrong data). Proposal: `identity.localAccount` in the user
+   spec, carried through the manifest.
 
-The test account is not in `admin`, so every GUI cask failed writing
-`/Applications` (`sudo: a terminal is required…`) — 22 of 27 entitled items,
-each rolled back cleanly by brew. `brewEnv`'s sealed environment (correctly)
-blocks a `HOMEBREW_CASK_OPTS` override from outside, so only abra can fix this.
+4. **Bootstrap must `brew trust` third-party taps** — first converge dies on
+   `hashicorp/tap/terraform` otherwise.
 
-**Proposal:** the convenience plane passes `--appdir=$HOME/Applications
---adopt` — the per-user plane installs to the per-user Applications dir
-(symmetry: trust plane = machine-wide, convenience = user). `--adopt` also
-resolves conflicts with pre-existing manual installs (e.g. a hand-installed
-VS Code). Caveat: **pkg-installer casks** (`logi-options+`) require root
-regardless of appdir → they belong in `system[]`/MDM; fop-rbac will
-reclassify them once the direction is confirmed.
+5. **Cosmetic** — `plan` lists already-installed casks as ToInstall;
+   `reap --dry-run`'s expected exit-1 surfaces as an `Error:` line.
 
-### 2. `system[]` items are missing from the reap allowed-set
+6. **`brewBundleTimeout = 10min` is tight for a first (multi-GB) converge** —
+   fine if resume-next-tick is the intended recovery; confirming it's deliberate.
 
-`docker-desktop` is `system[]` in the roles, but a brew-installed copy showed
-under "Would uninstall casks" — the convenience reap would remove a
-trust-plane app. Suggest `Compute` adds `m.System` to `Reap.Allowed.Casks`
-(or this repo's renderer includes system entries in the whitelist — either
-side works, coordinate so it's exactly one of them). Interim workaround in
-this repo: a per-user `overrides.add: [docker-desktop]`.
+## Repo-side actions taken here
 
-### 3. `local_account` needs a real mapping source
+Role whitelists for engineer self-installs + the docker-desktop override
+(`c43661a`) — verified via `reap --dry-run`: zero uninstalls. Real-manifest
+fixture kit at `../fop-toolkit/fixtures/manifests/users/` so the golden tests
+run un-skipped.
 
-`Compute` defaults `local_account` to the GitHub login; this Mac's account is
-`vireakyuth.neak` vs login `vireakyuth`, so `apply` refused (exit 13 — good
-guard, wrong data). **Proposal:** an `identity.localAccount` field in this
-repo's user spec, carried through the manifest into desired-state.
-
-### 4. Bootstrap must handle Homebrew tap trust
-
-Current Homebrew refuses third-party taps until `brew trust <tap>` — the first
-converge on a fresh Mac dies on `hashicorp/tap/terraform`. One line in the
-Bootstrapper.
-
-### 5. Cosmetic: `plan` doesn't see installed casks
-
-Successfully installed casks (claude-code, codex, dbeaver-community…) still
-appear in `ToInstall`. Related: `reap --dry-run`'s expected exit-1-on-removals
-surfaces as an `Error:` line in the report.
-
-### 6. `brewBundleTimeout = 10min` is tight for a first converge
-
-A first converge pulling multiple GB will exceed it. If "resume next tick" is
-the intended recovery, all good — flagging to confirm it's deliberate.
-
-## Repo-side actions already taken here
-
-- Role whitelists for engineer self-installs (`go`, `pyenv`, `python@3.14`,
-  `ripgrep` / `infracost`, `mas`) — verified via `reap --dry-run`: zero
-  uninstalls (`c43661a`).
-- Per-user `docker-desktop` override pending finding #2.
-- Real-manifest fixture kit placed at `../fop-toolkit/fixtures/manifests/users/`
-  (local convenience so the golden tests run un-skipped).
-
-## Net
-
-Core loop, hash contract, and fail-closed posture all check out against
-production data. Finding #1 is the one to decide before any pilot on managed
-(non-admin) Macs — the fop-rbac side will pair on whichever option is chosen.
+**Net:** core loop, hash contract, and fail-closed posture all check out on
+production data. #1 is the one to settle before piloting on managed
+(non-admin) Macs.
