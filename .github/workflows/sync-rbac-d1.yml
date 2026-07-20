@@ -55,10 +55,18 @@ jobs:
           fail() { echo "::error::$1"; exit 1; }
           [ -n "${CLOUDFLARE_API_TOKEN:-}" ]  || fail "Repo secret CLOUDFLARE_API_TOKEN is not set."
           [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ] || fail "Repo secret CLOUDFLARE_ACCOUNT_ID is not set."
-          v=$(curl -s https://api.cloudflare.com/client/v4/user/tokens/verify \
-                -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
-          echo "$v" | grep -q '"status": *"active"' \
-            || fail "CLOUDFLARE_API_TOKEN is invalid or inactive (tokens/verify said: $v)"
+          # Cloudflare has TWO token kinds that verify at DIFFERENT endpoints:
+          # user tokens (My Profile) at /user/tokens/verify, account tokens
+          # (cfat_..., created under the account) at /accounts/{id}/tokens/verify.
+          # A valid account token gets "code 1000 Invalid API Token" from the
+          # user endpoint — so accept either kind.
+          ok=""
+          for ep in "user/tokens/verify" "accounts/$CLOUDFLARE_ACCOUNT_ID/tokens/verify"; do
+            v=$(curl -s "https://api.cloudflare.com/client/v4/$ep" \
+                  -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
+            if echo "$v" | grep -q '"status": *"active"'; then ok=yes; break; fi
+          done
+          [ -n "$ok" ] || fail "CLOUDFLARE_API_TOKEN is not an active user or account token (last verify response: $v)"
           code=$(curl -s -o /dev/null -w '%{http_code}' \
                 "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/d1/database" \
                 -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN")
