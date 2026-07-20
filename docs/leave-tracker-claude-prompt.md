@@ -2,11 +2,12 @@
 
 **How to use this file (for the leave-tracker owner):**
 
-1. Get the **D1 database id** from the fop-rbac owner (it's printed by the
-   `sync-rbac-d1` GitHub Action, or `wrangler d1 info fop-rbac`).
-2. Replace `<FOP_RBAC_D1_DATABASE_ID>` below with it.
-3. Open Claude Code in the **leave-tracker** repo and paste everything under
+1. Open Claude Code in the **leave-tracker** repo and paste everything under
    the line. Review the diff before deploying, as usual.
+2. The RBAC database id is already filled in
+   (`9e70ef05-5e3f-4177-a457-daf12bf0dffd`). If it ever changes, the current
+   one is printed by the `sync-rbac-d1` GitHub Action in fop-rbac, or
+   `wrangler d1 info fop-rbac`.
 
 Companion docs (in fop-rbac): [`leave-tracker-integration.md`](leave-tracker-integration.md)
 (reference + monitoring guide) and [`leave-tracker-rbac-overview.md`](leave-tracker-rbac-overview.md)
@@ -30,7 +31,7 @@ Do not change how leave data works. Only identity/authorization changes.
 
 ## The RBAC contract
 
-- Database: `fop-rbac`, id `<FOP_RBAC_D1_DATABASE_ID>`. Bind it as `FOP_RBAC_DB`.
+- Database: `fop-rbac`, id `9e70ef05-5e3f-4177-a457-daf12bf0dffd`. Bind it as `FOP_RBAC_DB`.
 - One table:
 
   ```sql
@@ -65,7 +66,7 @@ Do not change how leave data works. Only identity/authorization changes.
    ```jsonc
    "d1_databases": [
      { "binding": "DB",          "database_name": "leave-tracker", "database_id": "6c8c4510-6cea-41b2-8329-65c53181103d" },
-     { "binding": "FOP_RBAC_DB", "database_name": "fop-rbac",      "database_id": "<FOP_RBAC_D1_DATABASE_ID>" }
+     { "binding": "FOP_RBAC_DB", "database_name": "fop-rbac",      "database_id": "9e70ef05-5e3f-4177-a457-daf12bf0dffd" }
    ]
    ```
 
@@ -169,6 +170,10 @@ Using `DEV_USER_EMAIL` to switch identities locally:
    except `damon.hase@farmer1st.org`, who still gets `admin` (break-glass).
 6. Role data changes in the RBAC DB take effect on the next request **without
    redeploying** (edit a local row and re-request to prove it).
+7. Team page (as an admin): the **Role** column shows **Admin** for
+   `norbert@farmer1st.org` and `damon.hase@farmer1st.org` and **Employee** for
+   the rest — read-only chips sourced from the RBAC D1, with no role editor
+   anywhere in the UI, and the "managed centrally in FOP RBAC" note visible.
 
 ## Do NOT
 
