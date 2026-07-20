@@ -44,6 +44,7 @@ fop-appstore (publishes)  ◀──ETag fast-poll──  fop daemon on each Mac
 {
   "schema": "fop.rendered-manifest/v1",
   "user": "vireakyuth",
+  "local_account": "vireakyuth.neak",
   "brewfile": "brew \"git\"\ncask \"slack\"\n",
   "system": ["docker-desktop"],
   "whitelist": [],
@@ -55,6 +56,11 @@ fop-appstore (publishes)  ◀──ETag fast-poll──  fop daemon on each Mac
   resolves roles→apps, the daemon does not resolve**. Formulae + public casks
   only (ADR-0020) — App Store / direct-download apps are out of FOP scope
   (MDM/VPP handles those).
+- `local_account` — the person's macOS short account name, for the daemon's
+  converge guard (desired-state `local_account`). Defaults to the login when
+  the profile doesn't declare `identity.localAccount`. **Additive, 2026-07-20**
+  (abra findings #3): not part of the hashed payload; daemons that predate it
+  ignore unknown keys, so verification is unaffected either way.
 - `system[]` — trust-plane installer ids (admin-requiring installs).
 - `whitelist[]` — tolerated self-installs the daemon must not reap (ADR-0011).
 - Arrays are always present, never null.

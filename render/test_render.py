@@ -45,8 +45,12 @@ def test_render_is_deterministic():
 def test_manifest_shape_is_frozen():
     """The daemon's contract is FROZEN: rendered manifests carry exactly these
     keys and nothing else. New profile features (appRoles, registries, ...)
-    must never leak into what Abra consumes."""
-    FROZEN_KEYS = {"schema", "user", "brewfile", "system", "whitelist", "payload_sha256"}
+    must never leak into what Abra consumes.
+    Contract change log:
+      2026-07-20  + local_account (abra findings #3) — additive: outside the
+                  hashed payload, ignored by daemons that predate it."""
+    FROZEN_KEYS = {"schema", "user", "local_account", "brewfile", "system",
+                   "whitelist", "payload_sha256"}
     root = Path(__file__).resolve().parent.parent
     with tempfile.TemporaryDirectory() as d:
         subprocess.run([sys.executable, str(root / "render/render.py"), "--out", d],
@@ -54,6 +58,23 @@ def test_manifest_shape_is_frozen():
         for f in (Path(d) / "manifests/users").glob("*.json"):
             keys = set(json.loads(f.read_text()).keys())
             assert keys == FROZEN_KEYS, f"{f.name}: manifest keys drifted: {keys ^ FROZEN_KEYS}"
+
+
+def test_local_account_defaults_and_stays_out_of_payload():
+    """local_account defaults to the login; setting it must change NOTHING in
+    the hashed payload (revocation/change detection stays purely app-driven)."""
+    root = Path(__file__).resolve().parent.parent
+    with tempfile.TemporaryDirectory() as d:
+        subprocess.run([sys.executable, str(root / "render/render.py"), "--out", d],
+                       check=True, capture_output=True)
+        docs = {f.stem: json.loads(f.read_text())
+                for f in (Path(d) / "manifests/users").glob("*.json")}
+        # vireakyuth declares a differing macOS account; everyone else defaults
+        assert docs["vireakyuth"]["local_account"] == "vireakyuth.neak"
+        assert docs["damon-hase"]["local_account"] == "damon-hase"
+        for m in docs.values():  # never part of the hash
+            assert payload_sha256(m["brewfile"], m["system"], m["whitelist"]) \
+                == m["payload_sha256"]
 
 
 def test_index_matches_manifests():
@@ -77,5 +98,6 @@ if __name__ == "__main__":
     test_defaults_are_empty_arrays_not_null()
     test_render_is_deterministic()
     test_manifest_shape_is_frozen()
+    test_local_account_defaults_and_stays_out_of_payload()
     test_index_matches_manifests()
     print("all renderer tests passed (golden sha verified)")

@@ -26,10 +26,15 @@ states.
    casks". Suggest `Compute` adds `m.System` to `Reap.Allowed.Casks`.
    Interim: per-user `overrides.add` in this repo.
 
-3. **`local_account` needs a mapping source** — it defaults to the GitHub
-   login; my macOS account is `vireakyuth.neak`, so `apply` refused (exit 13 —
-   correct guard, wrong data). Proposal: `identity.localAccount` in the user
-   spec, carried through the manifest.
+3. **`local_account` needs a mapping source — ✅ spec side shipped** — it
+   defaults to the GitHub login; my macOS account is `vireakyuth.neak`, so
+   `apply` refused (exit 13 — correct guard, wrong data). fop-rbac manifests
+   now carry `local_account` (defaults to login; `identity.localAccount`
+   overrides — see ABRA-CONTRACT.md). Additive: outside the hashed payload,
+   and your parser ignores unknown keys (your `internal/rbac` tests pass on
+   the new manifests unchanged). Daemon remainder is a one-liner: add
+   `LocalAccount` to `RenderedManifest` and prefer it in `Compute`
+   (fallback `m.User`).
 
 4. **Bootstrap must `brew trust` third-party taps** — first converge dies on
    `hashicorp/tap/terraform` otherwise.

@@ -84,6 +84,13 @@ def render_user(catalog: dict, roles: dict, user: dict) -> dict:
     return {
         "schema": SCHEMA,
         "user": user["user"],
+        # macOS short account name for the daemon's converge guard. Defaults to
+        # the login (matching the daemon's own default) so the key is always
+        # present and the manifest stays deterministic. ADDITIVE contract
+        # change (2026-07-20, abra findings #3): NOT part of the hashed payload
+        # {brewfile, system, whitelist}, and daemons that predate it ignore
+        # unknown keys — verification is unaffected either way.
+        "local_account": user["identity"].get("localAccount", user["user"]),
         "brewfile": brewfile,
         "system": system,
         "whitelist": whitelist,

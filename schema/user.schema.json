@@ -20,7 +20,13 @@
           "minLength": 1,
           "description": "required only when a role grants GitHub teams — never use placeholders (handle squatting risk)"
         },
-        "awsUserName": { "type": "string", "minLength": 1 }
+        "awsUserName": { "type": "string", "minLength": 1 },
+        "localAccount": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^[a-z0-9][a-z0-9._-]*$",
+          "description": "macOS short account name on the person's Mac when it differs from the GitHub login (e.g. vireakyuth.neak) — carried into the rendered manifest as local_account for the daemon's converge guard"
+        }
       }
     },
     "roles": {

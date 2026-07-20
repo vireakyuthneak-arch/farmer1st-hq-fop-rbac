@@ -5,6 +5,7 @@ identity:
   email: vireakyuth.neak@farmer1st.org
   fullName: Neak Vireakyuth
   github: vireakyuth
+  localAccount: vireakyuth.neak # macOS account ≠ GitHub login (abra findings #3)
 
 roles:
   - backend-engineer
