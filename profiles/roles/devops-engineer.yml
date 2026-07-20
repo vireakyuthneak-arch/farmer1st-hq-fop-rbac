@@ -48,6 +48,11 @@ apps:
 system:
   - docker-desktop
 
+# tolerated self-installs (ADR-0011): brew names the reap must NOT remove.
+whitelist:
+  - infracost
+  - mas
+
 # per-app roles (see profiles/applications.yml; strongest wins across roles)
 # NOTE: additive only — the Abra renderer ignores this key entirely
 appRoles:

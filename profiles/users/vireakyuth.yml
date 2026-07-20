@@ -9,3 +9,11 @@ identity:
 roles:
   - backend-engineer
   - devops-engineer
+
+# docker-desktop is system[] (trust-plane) in the roles, so the convenience
+# reap doesn't count it as an entitled cask and would uninstall a brew-installed
+# copy. Entitle it per-user until the system[]-vs-reap gap is resolved in abra
+# (finding filed with the daemon owner).
+overrides:
+  add:
+    - docker-desktop

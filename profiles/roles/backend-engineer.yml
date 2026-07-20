@@ -47,6 +47,15 @@ apps:
 system:
   - docker-desktop
 
+# tolerated self-installs (ADR-0011): brew names the reap must NOT remove.
+# Engineers commonly self-install these; deps of kept packages are protected
+# by brew bundle cleanup's own dependency awareness.
+whitelist:
+  - go
+  - pyenv
+  - python@3.14
+  - ripgrep
+
 # per-app roles (see profiles/applications.yml; strongest wins across roles)
 # NOTE: additive only — the Abra renderer ignores this key entirely
 appRoles:
