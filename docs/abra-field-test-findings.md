@@ -12,14 +12,28 @@ states.
 
 ## Findings
 
-1. **[decision needed] GUI casks can't install for standard (non-admin) users.**
+1. **[decision needed] GUI casks can't install for standard (non-admin) users
+   — ✅ fix PROTOTYPED & VALIDATED.**
    22 of 27 entitled apps failed writing `/Applications` (brew escalates to
    sudo; non-admin can't). `brewEnv`'s sealed env (rightly) blocks external
    `HOMEBREW_CASK_OPTS`, so only abra can fix it.
-   **Proposal:** convenience plane passes `--appdir=$HOME/Applications --adopt`
-   (user plane → user Applications; adopt handles pre-existing manual installs).
-   Pkg-installer casks (`logi-options+`) need root regardless → `system[]`/MDM;
-   fop-rbac will reclassify once direction is confirmed.
+   **Validated fix** (built via `go build -overlay`, repo untouched; re-ran the
+   full converge on the same standard-user Mac): one line in `renderBrewfile`
+   (`internal/convenience/converge.go`):
+
+   ```go
+   b.WriteString("cask_args appdir: \"~/Applications\", adopt: true\n")
+   ```
+
+   **Result: 20/22 entitled casks installed** to `~/Applications`, zero admin
+   prompts; a pre-existing manual Spotify was adopted in place; reap ok,
+   removed 0. The only 2 failures were `logi-options+` and `privileges` —
+   pkg-installer casks that run `sudo installer` regardless of appdir (see
+   [`app-privilege-audit.md`](app-privilege-audit.md): exactly 4 such casks in
+   the whole 55-app catalog). Those belong in `system[]`/MDM; fop-rbac will
+   reclassify on your confirmation. Known cosmetic: a manually-installed app in
+   `/Applications` (e.g. VS Code) gets a second, brew-managed copy in
+   `~/Applications` — adopt only inspects the target dir.
 
 2. **`system[]` missing from the reap allowed-set** — a brew-installed
    `docker-desktop` (system[] in the roles) showed under "Would uninstall
@@ -34,10 +48,15 @@ states.
    and your parser ignores unknown keys (your `internal/rbac` tests pass on
    the new manifests unchanged). Daemon remainder is a one-liner: add
    `LocalAccount` to `RenderedManifest` and prefer it in `Compute`
-   (fallback `m.User`).
+   (fallback `m.User`) — **prototyped & validated**: with that line overlaid,
+   the guard passed from pure manifest data (all 11 company users now
+   declare `identity.localAccount`; manifests always carry `local_account`).
 
-4. **Bootstrap must `brew trust` third-party taps** — first converge dies on
-   `hashicorp/tap/terraform` otherwise.
+4. **`brew trust` must be asserted by the daemon, not just bootstrap** — the
+   first converge dies on `hashicorp/tap/terraform`, and trust proved
+   non-durable in testing (invalidated after a tap update mid-run). Suggest:
+   trust every manifest-declared tap at the start of each converge
+   (the manifest's tap list is exactly the right allowlist).
 
 5. **Cosmetic** — `plan` lists already-installed casks as ToInstall;
    `reap --dry-run`'s expected exit-1 surfaces as an `Error:` line.
