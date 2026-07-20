@@ -201,7 +201,7 @@ apps:
   linear:
     name: Linear
     source: cask
-    id: linear-linear
+    id: linear # brew renamed the token (was linear-linear)
     version: latest
     category: project
   telegram:
