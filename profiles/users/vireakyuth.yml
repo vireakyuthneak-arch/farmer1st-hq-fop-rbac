@@ -10,7 +10,6 @@ identity:
 roles:
   - backend-engineer
   - devops-engineer
-  - program-manager
 
 # docker-desktop is system[] (trust-plane) in the roles, so the convenience
 # reap doesn't count it as an entitled cask and would uninstall a brew-installed

@@ -6,4 +6,4 @@ identity:
   localAccount: damon.hase # macOS login == email local-part (company convention)
   fullName: Damon Hase
 roles:
-  - program-manager
+  - backend-engineer
