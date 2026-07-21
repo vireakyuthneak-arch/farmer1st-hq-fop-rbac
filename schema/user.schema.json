@@ -13,7 +13,7 @@
       "required": ["email"],
       "additionalProperties": false,
       "properties": {
-        "email": { "type": "string", "format": "email" },
+        "email": { "type": "string", "format": "email", "pattern": "^[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,}$" },
         "fullName": { "type": "string" },
         "github": {
           "type": "string",

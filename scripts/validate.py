@@ -34,9 +34,34 @@ FOP = ROOT / "profiles"
 SCHEMA = ROOT / "schema"
 
 
+class _StrictLoader(yaml.SafeLoader):
+    """SafeLoader that REJECTS duplicate mapping keys. PyYAML's default silently
+    keeps the last value — in an access-control spec, a duplicated `roles:` or
+    `overrides:` block silently dropping its first occurrence is fail-open."""
+
+
+def _strict_mapping(loader, node, deep=False):
+    seen = set()
+    for key_node, _ in node.value:
+        key = loader.construct_object(key_node, deep=deep)
+        if key in seen:
+            raise yaml.constructor.ConstructorError(
+                None, None, f"duplicate key {key!r}", key_node.start_mark)
+        seen.add(key)
+    return yaml.SafeLoader.construct_mapping(loader, node, deep)
+
+
+_StrictLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+    lambda loader, node: _strict_mapping(loader, node))
+
+
 def load_yaml(path: Path) -> dict:
     with path.open() as f:
-        return yaml.safe_load(f)
+        try:
+            return yaml.load(f, Loader=_StrictLoader)
+        except yaml.constructor.ConstructorError as e:
+            sys.exit(f"{path.relative_to(ROOT)}: {e}")
 
 
 def load_schema(name: str) -> Draft202012Validator:
@@ -106,7 +131,25 @@ def validate() -> int:
     for name, doc in users.items():
         errors += schema_errors(f"users/{name}.yml", user_v, doc)
 
+    # Fail-closed sequencing: the cross-reference pass below assumes
+    # schema-valid shapes. Running it on invalid docs produces tracebacks or
+    # misleading noise instead of the real schema error — stop here instead.
+    if errors:
+        print("FOP spec INVALID (schema errors — cross-references not checked):\n"
+              + "\n".join(errors))
+        return 1
+
     app_keys = set((catalog.get("apps") or {}).keys())
+
+    # two catalog keys resolving to the same brew token would render duplicate
+    # Brewfile lines (and make `resolve` ambiguous)
+    ids_seen = {}
+    for key, app in (catalog.get("apps") or {}).items():
+        pair = (app.get("source"), app.get("id"))
+        if pair in ids_seen:
+            errors.append(f"  catalog.yml: keys '{ids_seen[pair]}' and '{key}' both "
+                          f"map to {pair[0]} '{pair[1]}' — duplicate Brewfile lines")
+        ids_seen[pair] = key
 
     # filename must equal the declared name — terraform and abra key off the
     # file, so a mismatch means two identities for one person/role
@@ -168,6 +211,10 @@ def validate() -> int:
         for a in (ov.get("add") or []) + (ov.get("remove") or []):
             if a not in app_keys:
                 errors.append(f"  users/{name}.yml: override references unknown app '{a}'")
+        both = set(ov.get("add") or []) & set(ov.get("remove") or [])
+        if both:
+            errors.append(f"  users/{name}.yml: overrides list {sorted(both)} in BOTH "
+                          f"add and remove (remove silently wins — pick one)")
         # spec rule: the user key IS the GitHub login — when the handle is
         # recorded it must equal the filename stem
         gh = (user.get("identity") or {}).get("github")
@@ -207,6 +254,12 @@ def resolve(username: str) -> int:
     user = users[username]
     apps = catalog.get("apps") or {}
 
+    # resolve assumes a valid spec — give a pointer instead of a KeyError
+    missing = [r for r in user.get("roles", []) if r not in roles]
+    if missing:
+        sys.exit(f"user '{username}' references unknown role(s) {missing} — "
+                 f"run `validate` for the full report")
+
     # role apps (union across assigned roles), then apply per-user overrides
     desired = []
     for r in user["roles"]:
@@ -241,7 +294,9 @@ def resolve(username: str) -> int:
     print(f"# Desired app set for {username} (roles: {', '.join(user['roles'])})")
     print(f"# {len(desired)} apps — this is what Abra converges the Mac to:\n")
     for a in sorted(desired):
-        app = apps[a]
+        app = apps.get(a)
+        if app is None:
+            sys.exit(f"app '{a}' is not in the catalog — run `validate` for the full report")
         ver = f" @{app['version']}" if app.get("version") else ""
         print(f"  {a:<16} {app['source']:<8} {app['id']}{ver}")
     return 0

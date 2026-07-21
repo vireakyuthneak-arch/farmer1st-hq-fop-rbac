@@ -2,7 +2,7 @@
 VENV := .venv
 PY   := $(VENV)/bin/python
 
-.PHONY: setup validate resolve render sim tf-fmt tf-validate tf-plan clean
+.PHONY: setup validate resolve render d1 audit tokens sim tf-fmt tf-validate tf-plan clean
 
 setup:
 	python3 -m venv $(VENV)
@@ -27,6 +27,18 @@ render:
 	$(PY) render/test_render.py
 	$(PY) render/render.py --out build
 
+# Generate build/rbac.sql — the D1 sync SQL that CI applies (sync-rbac-d1.yml).
+d1:
+	$(PY) scripts/render-d1.py
+
+# Classify catalog apps by install privilege (needs Homebrew locally).
+audit:
+	$(PY) scripts/audit-privileges.py
+
+# Verify every catalog brew token still exists upstream (HTTP API, no brew).
+tokens:
+	$(PY) scripts/check-brew-tokens.py
+
 tf-fmt:
 	cd terraform && terraform fmt -recursive
 
@@ -37,5 +49,5 @@ tf-validate:
 tf-plan:
 	cd terraform && printf 'local.github_memberships\nlocal.aws_assignments\n' | terraform console
 
-clean:
-	rm -rf $(VENV) terraform/.terraform terraform/.terraform.lock.hcl
+clean: # never deletes lockfiles — those are committed, reviewed dependencies
+	rm -rf $(VENV) build terraform/.terraform foundation/.terraform

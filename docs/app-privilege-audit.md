@@ -43,10 +43,9 @@ regardless of the appdir decision.
 | Zoom | `zoom` | pkg | program-manager |
 
 These four can never be installed by the convenience plane on a standard-user
-Mac. **fop-rbac action (ready to go):** move them from `apps:` to `system[]`
-in the roles above once the trust-plane install path for system[] items is
-confirmed on the abra side — until then they'd simply stop installing rather
-than fail noisily.
+Mac. **Done:** all four now live in `system[]` (trust plane) per the CTO
+decision + abra `964ee08` — the convenience session set contains no
+root-requiring casks.
 
 ## Net for abra
 

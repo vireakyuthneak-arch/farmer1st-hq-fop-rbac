@@ -1,0 +1,5 @@
+# CI dependency pins for the validator/renderer jobs. Bump deliberately —
+# an unpinned jsonschema/pyyaml major bump could change validation behavior
+# with zero repo change to explain it. Keep in sync with `make setup`.
+pyyaml==6.0.3
+jsonschema==4.26.0

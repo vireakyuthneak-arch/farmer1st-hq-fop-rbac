@@ -1,0 +1,5 @@
+# Merging to main grants real access (Cloudflare members/Access groups, the
+# app-RBAC D1/KV roles, and later AWS SSO + GitHub teams) and reshapes every
+# fleet Mac's app set. Every path therefore requires owner review.
+# (Enforced once branch protection enables "Require review from Code Owners".)
+* @vireakyuth

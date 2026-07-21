@@ -25,7 +25,7 @@
           "enum": ["formula", "cask"],
           "description": "ADR-0020: Homebrew formulae + public casks only. App Store / direct-download apps are out of FOP scope (MDM/VPP)."
         },
-        "id": { "type": "string", "minLength": 1 },
+        "id": { "type": "string", "minLength": 1, "pattern": "^[a-z0-9][a-z0-9+@._/-]*$", "description": "the literal brew token (may be tap-qualified, e.g. hashicorp/tap/terraform)" },
         "version": {
           "type": "string",
           "minLength": 1,

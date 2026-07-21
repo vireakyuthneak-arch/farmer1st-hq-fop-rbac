@@ -1,0 +1,8 @@
+# Keep the SHA-pinned GitHub Actions from fossilizing: Dependabot understands
+# commit pins and maintains the trailing version comments. Its PRs touch
+# .github/workflows/**, which already triggers the validate workflow.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule: { interval: weekly }

@@ -56,24 +56,32 @@ role: devops-engineer
 apps: [vscode, slack, granola, docker, docker-compose, docker-desktop, python, awscli, terraform, kubectl]
 cloud:
   aws:
-    grants: # account x permission set, any number of pairs
-      - { account: farmer1st-dev, permissionSet: DevOpsEngineer }
-      - { account: farmer1st-prod, permissionSet: Developer }
+    grants: # environment x permission set, any number of pairs
+      - { account: sandbox, permissionSet: PowerUser }
+      - { account: sit, permissionSet: DevOpsOps }
+      - { account: production, permissionSet: ViewOnly }
   github: { org: farmer1st-hq, teams: [devops, infrastructure] }
   cloudflare: { accessGroups: [internal-dashboards, infra-admin] }
 ```
 
-Permission-set names come from the small catalog defined as code in
-[`terraform/aws-foundation.tf`](terraform/aws-foundation.tf) (ReadOnly ·
-Developer · DevOpsEngineer · BreakGlassAdmin); logical account names resolve to
-real ids via `var.account_ids`.
+Permission-set names come from the persona catalog defined as code in
+[`terraform/aws-foundation.tf`](terraform/aws-foundation.tf) (ViewOnly ·
+ReadOnly · PowerUser · DevOpsOps · Admin (JIT-only) · SecurityAudit ·
+BreakGlass); logical environment names (sandbox/sit/staging/production/audit)
+resolve to real account ids via `var.account_ids`, fed from the
+[`foundation/`](foundation) layer's outputs. The `foundation/` layer (separate
+state) owns the AWS Organization itself: OUs, member accounts, and SCP
+guardrails.
 
 ### How a person is assigned
 
 ```yaml
 # profiles/users/vireakyuth.yml — filename == user == GitHub login
 user: vireakyuth
-identity: { email: vireakyuth.neak@farmer1st.org, github: vireakyuth }
+identity:
+  email: vireakyuth.neak@farmer1st.org   # keys app-RBAC (D1/KV), Access, AWS SSO
+  github: vireakyuth                     # the file key — users are login-keyed
+  localAccount: vireakyuth.neak          # macOS login (daemon converge guard)
 roles:    [backend-engineer, devops-engineer]
 overrides: { add: [figma] }        # optional tweak without forking a role
 ```
@@ -119,10 +127,14 @@ is precisely the desired state Abra converges the Mac to.
 - **Cloudflare** — Zero Trust Access group membership per role
   ([`cloudflare.tf`](terraform/cloudflare.tf)); Access policies on internal
   apps reference these groups.
-- **App RBAC** — per-user application roles materialized into the `fop-rbac`
-  Workers KV namespace ([`kv.tf`](terraform/kv.tf)); internal apps authorize
-  from it read-only instead of managing their own users
-  ([`docs/APP-RBAC.md`](docs/APP-RBAC.md)).
+- **App RBAC** — per-user application roles materialized two ways: the
+  `fop-rbac` **D1 database** (written by CI —
+  [`sync-rbac-d1.yml`](.github/workflows/sync-rbac-d1.yml) — the live path the
+  Leave Tracker consumes, see
+  [`docs/leave-tracker-integration.md`](docs/leave-tracker-integration.md)) and
+  the Workers KV namespace ([`kv.tf`](terraform/kv.tf), contract in
+  [`docs/APP-RBAC.md`](docs/APP-RBAC.md)). Apps read either read-only; role
+  changes reach them with no redeploy.
 
 Add a team to a role, or a role to a user, and the next `terraform apply` grants
 it; remove it and Terraform revokes it. Same GitOps model as the app side.
@@ -131,8 +143,13 @@ it; remove it and Terraform revokes it. Same GitOps model as the app side.
 
 Two systems split the work:
 
-- **GitHub Actions** ([`validate` workflow](.github/workflows/onboarding.yml))
-  validates the Profiles (schemas + cross-references) on every PR and push.
+- **GitHub Actions** — [`validate`](.github/workflows/onboarding.yml) checks
+  schemas + cross-references + the renderer golden hash on every PR/push;
+  [`render-manifests`](.github/workflows/render-manifests.yml) renders and
+  hands off to fop-appstore on merge;
+  [`sync-rbac-d1`](.github/workflows/sync-rbac-d1.yml) syncs app roles into
+  the D1 on merge; [`catalog-freshness`](.github/workflows/catalog-freshness.yml)
+  verifies every brew token still exists upstream (weekly + on catalog PRs).
 - **HCP Terraform** (app.terraform.io, VCS-driven workspace on this repo,
   working directory `terraform/`) posts a speculative plan on every PR and
   applies on merge to `main`. State lives in the workspace; every run is

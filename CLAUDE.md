@@ -24,12 +24,12 @@ This repo owns the **Profiles, the renderer, and the Terraform** — not the dae
 | `profiles/roles/*.yml` | One per role: `apps` (catalog keys) + `cloud` access (aws `grants[]` of account × permissionSet, github org/teams, cloudflare accessGroups/dashboardRole). |
 | `profiles/users/*.yml` | One per person, keyed by GitHub login (filename == `user:` == login): `identity` + `roles` + `overrides`. |
 | `profiles/devices.yml` | Serial → user map (the daemon's device lookup). |
-| `profiles/applications.yml` | App registry: `kind` (internal-cf enforced via KV / external recorded-only) + ORDERED role vocabulary (weakest→strongest = conflict rule). Roles grant via top-level `appRoles:`; strongest wins for multi-role users. Materialized by `terraform/kv.tf` into the `fop-rbac` KV namespace, key `user:<email>` — consumer contract in `docs/APP-RBAC.md`. |
+| `profiles/applications.yml` | App registry: `kind` (internal-cf enforced via KV / external recorded-only) + ORDERED role vocabulary (weakest→strongest = conflict rule). Roles grant via top-level `appRoles:`; strongest wins for multi-role users. Materialized into the `fop-rbac` D1 (CI: `sync-rbac-d1.yml` — the live path, contract in `docs/leave-tracker-integration.md`) and the KV namespace (`terraform/kv.tf`, contract in `docs/APP-RBAC.md`). |
 | `render/` | Deterministic renderer + golden-fixture tests → Rendered Manifests for fop-appstore. |
 | `schema/*.schema.json` | JSON Schema contract Abra + CI validate against. |
-| `docs/ABRA-CONTRACT.md` | The full Abra ↔ RBEC interface spec (what Abra reads and how it must converge). |
+| `docs/ABRA-CONTRACT.md` | The full Abra ↔ Profiles interface spec (what Abra reads and how it must converge). |
 | `scripts/validate.py` | `validate` (schema + cross-refs) and `resolve <user>` (prints the exact app set Abra installs). |
-| `terraform/` | Reads `profiles/` via `yamldecode`. Two AWS layers: `aws-foundation.tf` (the permission-set **catalog as code**: ReadOnly/Developer/DevOpsEngineer/BreakGlassAdmin) + `aws.tf` (Identity Center users + assignments). Also `github.tf` (org+team membership), `cloudflare.tf` (Access groups + dashboard members), `variables.tf` (account IDs, `enable_aws`/`enable_github` gates). |
+| `terraform/` | Reads `profiles/` via `yamldecode`. Two AWS layers: `aws-foundation.tf` (the persona **catalog as code**: ViewOnly/ReadOnly/PowerUser/DevOpsOps/Admin(JIT-only)/SecurityAudit/BreakGlass) + `aws.tf` (Identity Center users + assignments). Also `github.tf` (org+team membership), `cloudflare.tf` (Access groups + dashboard members), `variables.tf` (account IDs, `enable_aws`/`enable_github` gates). |
 
 ## Commands
 
@@ -71,7 +71,7 @@ make tf-plan                   # show GitHub/AWS access the spec resolves to (no
 
 ## Open items
 
-- 9 of 10 fleet users still need their real **GitHub login** filled in
+- most fleet users still need their real **GitHub login** filled in (validate warns per user)
   (`identity.github`, and rename file+`user:`+devices.yml entry to match).
   Blocking for `enable_github`, not for app delivery.
 - Terraform currently *assumes* the GitHub teams already exist (`github.tf`

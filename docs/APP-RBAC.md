@@ -1,5 +1,7 @@
 # App RBAC ↔ the `fop-rbac` KV namespace (consumer contract)
 
+> **Two materializations exist.** This doc specifies the **KV** contract. The first shipped consumer (Leave Tracker) reads the equivalent **D1** materialization instead — same resolved roles, same fail-closed rules — see [`leave-tracker-integration.md`](leave-tracker-integration.md).
+
 How internal applications (roadmap, leave-tracker, …) consume per-user roles
 from FOP instead of managing their own users. Peer of
 [ABRA-CONTRACT.md](ABRA-CONTRACT.md): this page is the complete interface — an

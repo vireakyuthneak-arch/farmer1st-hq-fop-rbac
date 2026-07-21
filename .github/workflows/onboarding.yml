@@ -1,7 +1,8 @@
-# RBEC validation gate.
+# RBAC validation gate.
 #
 # Division of labor (Option A):
-#   GitHub Actions  -> validates the RBEC (schemas + cross-references) on every PR/push
+#   GitHub Actions  -> validates the Profiles (schemas + cross-references) and
+#                      the renderer contract (golden hash) on every PR/push
 #   HCP Terraform   -> plans on PR (speculative), applies on merge to main
 #                      (VCS-driven workspace, working dir `terraform`,
 #                       credentials live in workspace variables — see README)
@@ -10,32 +11,56 @@ name: validate
 on:
   workflow_dispatch: {} # run it manually from the Actions tab anytime
   pull_request:
-    paths: ["profiles/**", "schema/**", "terraform/**", "scripts/**", ".github/workflows/**"]
+    paths: ["profiles/**", "schema/**", "render/**", "terraform/**", "foundation/**", "scripts/**", ".github/workflows/**"]
   push:
     branches: [main]
-    paths: ["profiles/**", "schema/**", "terraform/**", "scripts/**", ".github/workflows/**"]
+    paths: ["profiles/**", "schema/**", "render/**", "terraform/**", "foundation/**", "scripts/**", ".github/workflows/**"]
 
 permissions:
   contents: read
 
+# Cancel superseded PR runs only — pushes to main validate every commit.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
-        with: { python-version: "3.12" }
-      - run: pip install pyyaml jsonschema
-      - name: Validate RBEC (schemas + cross-references)
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: .github/requirements-ci.txt
+      - run: pip install -r .github/requirements-ci.txt
+      - name: Validate Profiles (schemas + cross-references)
         run: python3 scripts/validate.py validate
+      - name: Renderer golden hash + determinism tests
+        run: python3 render/test_render.py
 
   terraform-lint:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     defaults:
       run: { working-directory: terraform }
     steps:
-      - uses: actions/checkout@v4
-      - uses: hashicorp/setup-terraform@v3
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
+      - run: terraform fmt -check -recursive
+      - run: terraform init -backend=false -input=false
+      - run: terraform validate -no-color
+
+  foundation-lint:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run: { working-directory: foundation }
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd # v3.1.2
       - run: terraform fmt -check -recursive
       - run: terraform init -backend=false -input=false
       - run: terraform validate -no-color

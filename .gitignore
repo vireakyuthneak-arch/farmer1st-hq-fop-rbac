@@ -3,10 +3,14 @@
 .abra-sim/
 build/
 .env
+.env.*
+!.env.example
 README.local.md
 # Terraform working files — any layer (terraform/, foundation/, …)
 **/.terraform/
 **/*.tfstate
 **/*.tfstate.*
 **/tfplan
+**/*.tfvars
+!**/*.tfvars.example
 __pycache__/

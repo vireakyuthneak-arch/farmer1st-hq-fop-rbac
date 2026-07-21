@@ -38,6 +38,11 @@ set -a; . "$ENV_FILE"; set +a
 [ -n "${CLOUDFLARE_API_TOKEN:-}" ]  || { echo "CLOUDFLARE_API_TOKEN missing from .env" >&2; exit 1; }
 [ -n "${CLOUDFLARE_ACCOUNT_ID:-}" ] || { echo "CLOUDFLARE_ACCOUNT_ID missing from .env" >&2; exit 1; }
 export TF_VAR_cloudflare_account_id="$CLOUDFLARE_ACCOUNT_ID"
+# Optional dedicated KV token (falls back to the primary token when unset).
+# Must be the if-form: under `set -u` a bare && test aborts on the unset var.
+if [ -n "${CLOUDFLARE_KV_API_TOKEN:-}" ]; then
+  export TF_VAR_CLOUDFLARE_KV_API_TOKEN="$CLOUDFLARE_KV_API_TOKEN"
+fi
 
 # --- split-brain guard: once HCP Terraform owns the workspace (cloud block
 # active in versions.tf), local applies would run against SEPARATE state and
@@ -52,6 +57,9 @@ fi
 "$ROOT/.venv/bin/python" "$ROOT/scripts/validate.py" validate
 
 # --- terraform, Cloudflare resources only ---
+# Deliberately NOT targeted: cloudflare_d1_database.fop_rbac — until HCP owns
+# this workspace the D1 is provisioned by sync-rbac-d1.yml (create-if-missing);
+# applying it here too would race a duplicate. See OWNERSHIP in terraform/d1.tf.
 TARGETS=(-target=cloudflare_zero_trust_access_group.group -target=cloudflare_account_member.member -target=cloudflare_workers_kv_namespace.fop_rbac -target=cloudflare_workers_kv.user_doc)
 
 terraform -chdir="$ROOT/terraform" init -input=false -upgrade=false >/dev/null
