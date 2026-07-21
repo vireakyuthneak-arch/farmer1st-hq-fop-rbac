@@ -22,14 +22,14 @@ converged, reap removed 0.** Remaining 2 failures are environmental, not bugs:
    Verified: 20/22 casks into `~/Applications`, zero admin prompts, manual
    Spotify adopted in place.
 
-2. **`system[]` missing from the reap allowed-set — open.** A brew-managed
+2. **`system[]` missing from the reap allowed-set — ✅ RESOLVED (abra `9d493d0`; fop-rbac dropped the override crutch, `72caaa5`).** A brew-managed
    docker-desktop would be reaped as "unmanaged", and its UPGRADE fails in the
    convenience plane anyway (removes root-owned launchd helpers → sudo). It
    belongs to the trust plane end-to-end. Fix: `Compute` adds `m.System` to
    `Reap.Allowed.Casks`; then fop-rbac drops its per-user `overrides.add`
    crutch and the convenience plane never touches it again.
 
-3. **`local_account` mapping — spec side ✅ shipped, daemon one-liner open.**
+3. **`local_account` mapping — ✅ RESOLVED end-to-end (abra `9d493d0` reads the manifest field; verified live).**
    It defaults to the GitHub login; my macOS account is `vireakyuth.neak`, so
    the converge guard refused (exit 13 — correct). Manifests now carry
    `local_account` (all 11 users declare `identity.localAccount`; additive,
@@ -37,7 +37,7 @@ converged, reap removed 0.** Remaining 2 failures are environmental, not bugs:
    pass unchanged). Remaining: add `LocalAccount` to `RenderedManifest`,
    prefer it in `Compute` (fallback `m.User`) — prototyped, works.
 
-4. **`brew trust` must run EVERY converge — open.** Measured: trust survives
+4. **`brew trust` must run EVERY converge — ✅ RESOLVED (abra `9d493d0` trusts every DECLARED tap + pins HOMEBREW_NO_AUTO_UPDATE; fop-rbac `4e374c9` now emits the tap declarations the loop needs; verified live with zero manual trust).** Measured: trust survives
    exactly one converge; each run's auto-update moves the tap revision and
    voids the trust entry (reproduced twice). Fix: trust every
    manifest-declared tap at converge start, and/or pin
@@ -49,8 +49,11 @@ converged, reap removed 0.** Remaining 2 failures are environmental, not bugs:
 6. **`brewBundleTimeout = 10min`** is tight for a first multi-GB converge —
    fine if resume-next-tick is the intended recovery; please confirm.
 
-## Net
+## Net — ALL FINDINGS CLOSED (2026-07-21, abra `3ad84b2` × fop-rbac `4e374c9`)
 
-Core loop, hash contract, and fail-closed posture all hold on production data,
-and the non-admin blocker is resolved. Remaining daemon work: #2 (one line),
-#3 (one line), #4 (trust-per-converge policy).
+Final converge on the standard-user Mac: 35/36 entitled converged, reap ok
+(removed 0), tap trust fully daemon-managed, docker-desktop cleanly
+trust-plane-owned. Sole remaining failure is environmental: upgrading
+`terraform` on pre-release macOS 27 needs a source build (no bottle) and
+Xcode 27 — self-heals when Xcode updates or a bottle ships. Open daemon work
+is only the ship-dark trust-plane installer for `system[]` apps (`b42d5d7`).
