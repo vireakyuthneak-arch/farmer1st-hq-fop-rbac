@@ -32,9 +32,7 @@ apps:
   - chatgpt
   - iterm2
   - obsidian
-  - privileges
   - pycharm
-  - logi-options
   - dbeaver
   - postman
   - nvm
@@ -47,6 +45,8 @@ apps:
 
 system:
   - docker-desktop
+  - logi-options+ # pkg-installer cask — root always (privilege audit); trust plane installs
+  - privileges # pkg-installer cask — root always (privilege audit); trust plane installs
 
 # tolerated self-installs (ADR-0011): brew names the reap must NOT remove.
 whitelist:

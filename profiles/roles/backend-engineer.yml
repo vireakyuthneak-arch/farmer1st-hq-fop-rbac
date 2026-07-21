@@ -31,7 +31,6 @@ apps:
   - chatgpt
   - iterm2
   - obsidian
-  - privileges
   - pycharm
   - zen
   - nvm
@@ -46,6 +45,7 @@ apps:
 # trust-plane installs (admin-requiring; daemon root plane handles these)
 system:
   - docker-desktop
+  - privileges # pkg-installer cask — root always (privilege audit); trust plane installs
 
 # tolerated self-installs (ADR-0011): brew names the reap must NOT remove.
 # Engineers commonly self-install these; deps of kept packages are protected

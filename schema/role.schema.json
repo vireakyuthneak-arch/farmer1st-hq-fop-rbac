@@ -16,9 +16,9 @@
     },
     "system": {
       "type": "array",
-      "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+      "items": { "type": "string", "pattern": "^[a-z0-9][a-z0-9+@._-]*$" },
       "uniqueItems": true,
-      "description": "trust-plane installer ids (admin-requiring installs, e.g. docker-desktop) — rendered into the manifest's system[], installed by the daemon's root plane"
+      "description": "trust-plane installer ids (admin-requiring installs, e.g. docker-desktop, logi-options+) — raw brew/installer tokens (may contain + @ .), rendered into the manifest's system[], installed by the daemon's root plane"
     },
     "whitelist": {
       "type": "array",

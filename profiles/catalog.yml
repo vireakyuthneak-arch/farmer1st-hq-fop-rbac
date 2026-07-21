@@ -186,18 +186,6 @@ apps:
     id: miro
     version: latest
     category: collaboration
-  zoom:
-    name: Zoom
-    source: cask
-    id: zoom
-    version: latest
-    category: communication
-  teams:
-    name: Microsoft Teams
-    source: cask
-    id: microsoft-teams
-    version: latest
-    category: communication
   linear:
     name: Linear
     source: cask
@@ -294,12 +282,6 @@ apps:
     id: obsidian
     version: latest
     category: productivity
-  privileges:
-    name: Privileges
-    source: cask
-    id: privileges
-    version: latest
-    category: security
   zen:
     name: Zen Browser
     source: cask
@@ -324,12 +306,6 @@ apps:
     id: pycharm-ce
     version: latest
     category: dev
-  logi-options:
-    name: Logi Options+
-    source: cask
-    id: logi-options+
-    version: latest
-    category: utilities
   nvm:
     name: nvm
     source: formula

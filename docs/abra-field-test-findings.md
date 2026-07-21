@@ -12,8 +12,10 @@ states.
 
 ## Findings
 
-1. **[decision needed] GUI casks can't install for standard (non-admin) users
-   — ✅ fix PROTOTYPED & VALIDATED.**
+1. **GUI casks can't install for standard (non-admin) users — ✅ RESOLVED:
+   daemon fix shipped (`964ee08`, HOMEBREW_CASK_OPTS in brewEnv + ~/Applications
+   pre-create), and fop-rbac has reclassified the 4 pkg-installer casks
+   (logi-options+, privileges, microsoft-teams, zoom) into `system[]`.**
    22 of 27 entitled apps failed writing `/Applications` (brew escalates to
    sudo; non-admin can't). `brewEnv`'s sealed env (rightly) blocks external
    `HOMEBREW_CASK_OPTS`, so only abra can fix it.

@@ -7,8 +7,6 @@ apps:
   # collaboration
   - slack
   - notion
-  - zoom
-  - teams
   - linear
   - miro
   - granola
@@ -27,6 +25,12 @@ apps:
 
 # per-app roles (see profiles/applications.yml; strongest wins across roles)
 # NOTE: additive only — the Abra renderer ignores this key entirely
+# trust-plane installs (admin-requiring; daemon root plane handles these).
+# teams + zoom are pkg-installer casks — root always (privilege audit).
+system:
+  - microsoft-teams
+  - zoom
+
 appRoles:
   roadmap: editor
   leave-tracker: admin      # PMs administer the leave tracker (approve + settings + members)
