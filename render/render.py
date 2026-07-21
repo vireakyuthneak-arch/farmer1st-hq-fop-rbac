@@ -65,15 +65,19 @@ def resolve_apps(catalog: dict, roles: dict, user: dict) -> list:
 
 
 def render_brewfile(catalog: dict, app_keys: list) -> str:
-    """Deterministic Brewfile: brew lines then cask lines, each sorted by id.
-
-    No tap lines today — every catalog entry is public homebrew/cask
-    (ADR-0020). When private formulae land, taps go first: tap "<name>"\\n.
+    """Deterministic Brewfile: tap lines first, then brew, then cask — each
+    block sorted. Tap lines are DERIVED from tap-qualified ids (owner/tap/name,
+    e.g. hashicorp/tap/terraform -> tap "hashicorp/tap"): the daemon taps AND
+    trusts every declared tap each converge (abra field finding #4 — trust is
+    voided whenever a tap revision moves), so a tap-qualified formula without
+    its tap line would fail converge on every Mac.
     """
     apps = catalog["apps"]
     brews = sorted(apps[k]["id"] for k in app_keys if apps[k]["source"] == "formula")
     casks = sorted(apps[k]["id"] for k in app_keys if apps[k]["source"] == "cask")
-    lines = [f'brew "{i}"' for i in brews] + [f'cask "{i}"' for i in casks]
+    taps = sorted({"/".join(i.split("/")[:2]) for i in brews + casks if i.count("/") >= 2})
+    lines = ([f'tap "{t}"' for t in taps]
+             + [f'brew "{i}"' for i in brews] + [f'cask "{i}"' for i in casks])
     return "\n".join(lines) + "\n" if lines else ""
 
 

@@ -79,7 +79,7 @@ def test_brewfile_ordering_id_not_key():
         "terraform":  {"source": "formula", "id": "hashicorp/tap/terraform"},
     }}
     out = render_brewfile(catalog, ["aa-cask", "terraform", "zz-formula", "wrangler"])
-    assert out == ('brew "aaa"\nbrew "cloudflare-wrangler"\n'
+    assert out == ('tap "hashicorp/tap"\nbrew "aaa"\nbrew "cloudflare-wrangler"\n'
                    'brew "hashicorp/tap/terraform"\ncask "zzz"\n')
     assert render_brewfile(catalog, []) == ""  # empty set renders "" (not "\n")
 
