@@ -37,10 +37,14 @@ states.
    `/Applications` (e.g. VS Code) gets a second, brew-managed copy in
    `~/Applications` — adopt only inspects the target dir.
 
-2. **`system[]` missing from the reap allowed-set** — a brew-installed
-   `docker-desktop` (system[] in the roles) showed under "Would uninstall
-   casks". Suggest `Compute` adds `m.System` to `Reap.Allowed.Casks`.
-   Interim: per-user `overrides.add` in this repo.
+2. **`system[]` missing from the reap allowed-set** — now with upgrade-time
+   evidence: a brew-managed docker-desktop UPGRADE fails in the convenience
+   plane (removes root-owned launchd services + /Library/PrivilegedHelperTools
+   → sudo → no password). Its install artifact is an `app`, but its lifecycle
+   is privileged — it truly belongs to the trust plane end-to-end. The
+   per-user `overrides.add` crutch keeps it in the session set (and failing on
+   upgrades) until `Compute` adds `m.System` to `Reap.Allowed.Casks`; then the
+   override is dropped and the convenience plane never touches it again.
 
 3. **`local_account` needs a mapping source — ✅ spec side shipped** — it
    defaults to the GitHub login; my macOS account is `vireakyuth.neak`, so
@@ -54,11 +58,13 @@ states.
    the guard passed from pure manifest data (all 11 company users now
    declare `identity.localAccount`; manifests always carry `local_account`).
 
-4. **`brew trust` must be asserted by the daemon, not just bootstrap** — the
-   first converge dies on `hashicorp/tap/terraform`, and trust proved
-   non-durable in testing (invalidated after a tap update mid-run). Suggest:
-   trust every manifest-declared tap at the start of each converge
-   (the manifest's tap list is exactly the right allowlist).
+4. **`brew trust` must be asserted by the daemon, EVERY converge** — measured:
+   trust survives exactly one converge. Each converge's brew auto-update moves
+   the tap revision, which voids the revision-pinned trust entry, so the NEXT
+   converge fails on `hashicorp/tap/terraform` again (reproduced twice).
+   Fix options: assert `brew trust <tap>` for every manifest-declared tap at
+   converge start (the manifest tap list is the right allowlist), and/or pin
+   `HOMEBREW_NO_AUTO_UPDATE=1` in brewEnv and own updates as a scheduled job.
 
 5. **Cosmetic** — `plan` lists already-installed casks as ToInstall;
    `reap --dry-run`'s expected exit-1 surfaces as an `Error:` line.
