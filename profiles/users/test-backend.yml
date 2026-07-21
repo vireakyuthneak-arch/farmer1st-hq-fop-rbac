@@ -1,0 +1,12 @@
+# FOP lab device account — NOT a person. Holds exactly the backend-engineer
+# profile so the test Mac (see devices.yml) converges to that role's app set.
+# Email is plus-addressed to vireakyuth's mailbox (must be unique — it keys the
+# app-RBAC D1/KV docs). Set identity.localAccount to the test Mac's actual
+# macOS short name (`whoami` on that machine) before converge-guard testing.
+schemaVersion: 1
+user: test-backend
+identity:
+  email: vireakyuth.neak+testmac@farmer1st.org
+  fullName: FOP Test Mac (backend-engineer)
+roles:
+  - backend-engineer
