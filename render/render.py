@@ -138,6 +138,32 @@ def main() -> int:
             "version": version,
         }
 
+    # The daemon-contract fallback for serials not in the device map — the
+    # appstore's apply_manifests REFUSES a tree without users/_baseline.json.
+    # A safe EMPTY desired state: no apps, no system packages, empty whitelist
+    # (an unmapped Mac converges to "manage nothing" until it is enrolled).
+    baseline_brewfile = render_brewfile(catalog, [])
+    baseline = {
+        "schema": SCHEMA,
+        "user": "_baseline",
+        "local_account": "_baseline",
+        "brewfile": baseline_brewfile,
+        "system": [],
+        "whitelist": [],
+        "payload_sha256": payload_sha256(baseline_brewfile, [], []),
+    }
+    rel = "manifests/users/_baseline.json"
+    write_json(out / rel, baseline)
+    prev = prev_users.get("_baseline", {})
+    version = prev.get("version", 0)
+    if prev.get("payload_sha256") != baseline["payload_sha256"]:
+        version += 1
+    index_users["_baseline"] = {
+        "path": rel,
+        "payload_sha256": baseline["payload_sha256"],
+        "version": version,
+    }
+
     write_json(out / "manifests" / "index.json", {
         "devices": dict(sorted((devices_doc.get("devices") or {}).items())),
         "users": index_users,

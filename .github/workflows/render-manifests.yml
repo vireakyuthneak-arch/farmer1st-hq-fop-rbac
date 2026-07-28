@@ -74,23 +74,53 @@ jobs:
       - name: Render manifests
         run: python3 render/render.py --out build ${RENDER_PREV:-}
 
-      - name: Upload rendered manifests (inspection artifact)
+      # The appstore's publish workflow downloads THIS run's artifact by the
+      # exact name `staged` and expects a manifests/ tree at its root
+      # (fop-appstore publish.yml step 4), then recomputes the PIN-4 tree hash
+      # and rejects on mismatch. Artifact name, layout, and payload shape are
+      # all contract — change only in lockstep with fop-appstore.
+      - name: Stage manifests + compute PIN-4 tree hash
+        id: stage
+        run: |
+          mkdir -p staged
+          cp -R build/manifests staged/manifests
+          echo "tree_sha256=$(python3 scripts/manifest_tree_sha256.py staged/manifests)" >> "$GITHUB_OUTPUT"
+
+      - name: Upload staged manifests (the artifact the appstore verifies)
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
-          name: rendered-manifests
-          path: build/manifests/
+          name: staged
+          path: staged/
 
       - name: Dispatch publish-manifests to fop-appstore
         env:
           TOKEN: ${{ secrets.APPSTORE_DISPATCH_TOKEN }}
+          TREE_SHA256: ${{ steps.stage.outputs.tree_sha256 }}
         run: |
           if [ -z "$TOKEN" ]; then
             echo "::notice::APPSTORE_DISPATCH_TOKEN not configured — render verified, dispatch skipped."
             exit 0
           fi
+          # Payload = the appstore gate's closed publish-manifests schema
+          # (schema/source_repo/source_ref/source_run_id/manifests_tree_sha256;
+          # any extra or missing field is E_SCHEMA).
+          payload=$(python3 - <<PY
+          import json, os
+          print(json.dumps({
+              "event_type": "publish-manifests",
+              "client_payload": {
+                  "schema": 1,
+                  "source_repo": os.environ["GITHUB_REPOSITORY"],
+                  "source_ref": os.environ["GITHUB_SHA"],
+                  "source_run_id": int(os.environ["GITHUB_RUN_ID"]),
+                  "manifests_tree_sha256": os.environ["TREE_SHA256"],
+              },
+          }))
+          PY
+          )
           curl -sf -X POST \
             -H "Authorization: Bearer $TOKEN" \
             -H "Accept: application/vnd.github+json" \
             https://api.github.com/repos/farmer1st-common/fop-appstore/dispatches \
-            -d "{\"event_type\":\"publish-manifests\",\"client_payload\":{\"source_repo\":\"$GITHUB_REPOSITORY\",\"sha\":\"$GITHUB_SHA\"}}"
-          echo "dispatched publish-manifests for $GITHUB_SHA"
+            -d "$payload"
+          echo "dispatched publish-manifests: run=$GITHUB_RUN_ID tree=$TREE_SHA256"
