@@ -11,6 +11,7 @@ apps:
   # dev
   - git
   - gh
+  - fop-analytic   # f1-claude attribution gate (needs node for npx ccusage — granted below)
   - python
   - node
   - docker
