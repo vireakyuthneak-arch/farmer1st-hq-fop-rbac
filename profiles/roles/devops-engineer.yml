@@ -14,6 +14,8 @@ apps:
   # dev + cloud
   - git
   - gh
+  - fop-analytic   # f1-claude attribution gate
+  - node           # npx runs the gate's pinned ccusage (usage extraction)
   - python
   - docker
   - docker-compose

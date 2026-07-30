@@ -54,6 +54,12 @@ apps:
     id: gh
     version: latest
     category: dev
+  fop-analytic:
+    name: FOP AI-usage attribution (f1-claude gate)
+    source: formula
+    id: farmer1st/fop/fop-analytic   # our appstore tap (farmer1st-common/fop-appstore)
+    version: latest
+    category: dev
 
   # --- languages (pinned tracks) ---
   python:
