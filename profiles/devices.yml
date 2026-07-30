@@ -15,3 +15,4 @@ devices:
   DRYPWRW05V: kana-ty
   JVCWDLX2FX: voathnak-lim
   FVFJ95WHQ6L4: test-backend # repurposed as the FOP lab/test Mac (was laurent-lafon-barret)
+  ZR4JY9TP2F: test-devops # VirtualBuddy test VM (vireakyuth) — devops-engineer rehearsal
