@@ -1,0 +1,14 @@
+# FOP lab VM account — NOT a person. Holds exactly the devops-engineer
+# profile so the VirtualBuddy test VM (see devices.yml) converges to that
+# role's app set. Email is plus-addressed to vireakyuth's mailbox (must be
+# unique — it keys the app-RBAC D1/KV docs). localAccount matches the VM's
+# actual macOS short name (`whoami` inside the VM) so the agent-plane brew
+# leg runs as the logged-in user.
+schemaVersion: 1
+user: test-devops
+identity:
+  email: vireakyuth.neak+testvm@farmer1st.org
+  localAccount: neak.vireakyuth.test
+  fullName: FOP Test VM (devops-engineer)
+roles:
+  - devops-engineer
